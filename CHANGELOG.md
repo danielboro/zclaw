@@ -8,6 +8,22 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 - No unreleased changes yet.
 
+## [2.10.0] - 2026-03-03
+
+### Added
+- Added a centralized built-in tool registry via `main/builtin_tools.def`, making built-in tool declarations single-source and easier to extend.
+
+### Changed
+- Refactored tool registration and initialization paths to consume the shared built-in registry definition list, reducing duplication across tool schema and dispatch wiring.
+
+### Docs
+- Documented two custom-tool approaches across web docs and reference docs: prompt-defined GPIO workflows (Approach A) and hosted HTTP-backed programs for more complex tools (Approach B).
+- Added troubleshooting guidance that breadboards can interfere with ESP Wi-Fi links and included practical mitigation recommendations.
+- Added a short Approach B pointer in `README.md`.
+
+### Tests
+- Added host coverage for built-in tool registry integrity and wired it into `./scripts/test.sh host`.
+
 ## [2.9.1] - 2026-03-02
 
 ### Fixed
