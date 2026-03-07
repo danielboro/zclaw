@@ -16,3 +16,9 @@ CONFIG_NVS_ENCRYPTION=y
 # Partition table includes nvs_key partition
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# T-Display extended pin configuration (if enabled in Kconfig)
+# CONFIG_ZCLAW_T_DISPLAY=y
+# CONFIG_ZCLAW_GPIO_MIN_PIN=0
+# CONFIG_ZCLAW_GPIO_MAX_PIN=35
+# Optional explicit allowlist for T-Display (if desired):
+# CONFIG_ZCLAW_GPIO_ALLOWED_PINS="0,14,34,35"
