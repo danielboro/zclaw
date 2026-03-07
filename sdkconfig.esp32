@@ -1,0 +1,20 @@
+#
+# ESP32 default configuration for zclaw with T-Display support
+#
+
+# Target
+CONFIG_IDF_TARGET_ESP32=y
+
+# Enable T-Display specific configuration in code
+CONFIG_ZCLAW_T_DISPLAY=y
+
+# Allow all ESP32 GPIO pins (0-39) for user tools
+CONFIG_ZCLAW_GPIO_MIN_PIN=0
+CONFIG_ZCLAW_GPIO_MAX_PIN=39
+# Optional: restrict to T-Display pins only by uncommenting the next line
+# CONFIG_ZCLAW_GPIO_ALLOWED_PINS="0,4,5,16,18,19,21,22,34,35"
+
+# Note: Flash/PSRAM pins (6-11) are automatically blocked on ESP32 by gpio_policy.c
+# Factory reset pin (optional, can be set via menuconfig later)
+# CONFIG_ZCLAW_FACTORY_RESET_PIN=0
+# CONFIG_ZCLAW_FACTORY_RESET_HOLD_MS=5000
