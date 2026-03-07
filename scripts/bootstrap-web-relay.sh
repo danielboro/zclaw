@@ -2,12 +2,12 @@
 # Bootstrap zclaw web relay without cloning the full repository.
 #
 # Examples:
-#   bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap-web-relay.sh) -- --serial-port /dev/cu.usbmodem1101
-#   bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap-web-relay.sh) -- --mock-agent --port 8787
+#   bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap-web-relay.sh) -- --serial-port /dev/cu.usbmodem1101
+#   bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap-web-relay.sh) -- --mock-agent --port 8787
 
 set -euo pipefail
 
-RAW_BASE="${ZCLAW_WEB_RELAY_RAW_BASE:-https://raw.githubusercontent.com/tnm/zclaw}"
+RAW_BASE="${ZCLAW_WEB_RELAY_RAW_BASE:-https://raw.githubusercontent.com/danielboro/zclaw}"
 BRANCH="${ZCLAW_WEB_RELAY_BRANCH:-main}"
 TARGET_DIR="${ZCLAW_WEB_RELAY_DIR:-$HOME/.local/share/zclaw/web-relay}"
 EXPECTED_SHA256="${ZCLAW_WEB_RELAY_BOOTSTRAP_SHA256:-}"
@@ -26,9 +26,9 @@ Bootstrap options:
   -h, --help           Show this help
 
 Examples:
-  bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap-web-relay.sh) -- --serial-port /dev/cu.usbmodem1101
-  bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap-web-relay.sh) -- --mock-agent --port 8787
-  ZCLAW_WEB_RELAY_BOOTSTRAP_SHA256=<sha256> bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap-web-relay.sh) -- --mock-agent
+  bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap-web-relay.sh) -- --serial-port /dev/cu.usbmodem1101
+  bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap-web-relay.sh) -- --mock-agent --port 8787
+  ZCLAW_WEB_RELAY_BOOTSTRAP_SHA256=<sha256> bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap-web-relay.sh) -- --mock-agent
 EOF
 }
 

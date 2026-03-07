@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Bootstrap zclaw without manual clone.
 # Usage:
-#   bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh)
-#   bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh) -- --build --flash
+#   bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh) -- --build --flash
 
 set -euo pipefail
 
-REPO_URL="${ZCLAW_BOOTSTRAP_REPO:-https://github.com/tnm/zclaw.git}"
+REPO_URL="${ZCLAW_BOOTSTRAP_REPO:-https://github.com/danielboro/zclaw.git}"
 BRANCH="${ZCLAW_BOOTSTRAP_BRANCH:-main}"
 TARGET_DIR="${ZCLAW_BOOTSTRAP_DIR:-$HOME/.local/share/zclaw/repo}"
 EXPECTED_SHA256="${ZCLAW_BOOTSTRAP_SHA256:-}"
@@ -26,10 +26,10 @@ Bootstrap options:
   -h, --help           Show this help
 
 Examples:
-  bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh)
-  bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh) -- --build --flash
-  ZCLAW_BOOTSTRAP_SHA256=<sha256> bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh)
-  bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh) --dir ~/src/zclaw -- --no-qemu
+  bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh)
+  bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh) -- --build --flash
+  ZCLAW_BOOTSTRAP_SHA256=<sha256> bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh)
+  bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh) --dir ~/src/zclaw -- --no-qemu
 EOF
 }
 

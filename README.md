@@ -32,7 +32,7 @@ Use the docs site for complete guides and reference.
 One-line bootstrap (macOS/Linux):
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh)
 ```
 
 Already cloned?

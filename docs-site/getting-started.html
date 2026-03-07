@@ -65,10 +65,10 @@
 
         <section class="section">
           <h2>One-Line Bootstrap</h2>
-          <pre>bash &lt;(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh)</pre>
+          <pre>bash &lt;(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh)</pre>
           <p>Optional checksum-verified bootstrap (same flow):</p>
           <pre>ZCLAW_BOOTSTRAP_SHA256="&lt;sha256-from-release-notes&gt;" \
-bash &lt;(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh)</pre>
+bash &lt;(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh)</pre>
           <p class="inline-note">Integrity check: when <code>ZCLAW_BOOTSTRAP_SHA256</code> (or <code>--sha256</code>) is set, <code>bootstrap.sh</code> hashes its own downloaded contents with SHA-256 and compares to your expected value before it clones/updates or runs <code>./install.sh</code>. Any mismatch exits immediately.</p>
           <p>Bootstrap clones or updates the repo, then runs <code>./install.sh</code>.</p>
           <ul>
@@ -190,7 +190,7 @@ what persona are you using</pre>
           <p>Only one process should own the serial port at a time.</p>
           <pre># No-clone bootstrap path
 ZCLAW_WEB_API_KEY='long-random-secret' \
-bash &lt;(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap-web-relay.sh) -- --serial-port /dev/cu.usbmodem1101 --host 0.0.0.0 --port 8787</pre>
+bash &lt;(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap-web-relay.sh) -- --serial-port /dev/cu.usbmodem1101 --host 0.0.0.0 --port 8787</pre>
         </section>
 
         <section class="section">

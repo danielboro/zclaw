@@ -320,7 +320,7 @@ def call_api(
             "content-type": "application/json",
         }
         if provider.name == "openrouter":
-            headers["HTTP-Referer"] = os.environ.get("OPENROUTER_HTTP_REFERER", "https://github.com/tnm/zclaw")
+            headers["HTTP-Referer"] = os.environ.get("OPENROUTER_HTTP_REFERER", "https://github.com/danielboro/zclaw")
             headers["X-Title"] = os.environ.get("OPENROUTER_X_TITLE", "zclaw api tests")
 
         token_field, token_value = _openai_like_max_tokens_field(model)

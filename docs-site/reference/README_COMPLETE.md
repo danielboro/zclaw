@@ -85,14 +85,14 @@ ESP32-S3-BOX-3 preset:
 This should generally work. If it does not, open an issue with details.
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh)
 ```
 
 Optional checksum-verified bootstrap (same flow, with expected hash):
 
 ```bash
 ZCLAW_BOOTSTRAP_SHA256="<sha256-from-release-notes>" \
-bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh)
 ```
 
 This bootstrap script clones/updates zclaw and then runs `./install.sh`. Works on macOS and Linux.
@@ -109,11 +109,11 @@ In non-interactive runs, unanswered prompts default to `no` unless you pass `-y`
 <summary>You can also preseed install flags (click to expand)</summary>
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh) -- --build --flash --flash-mode secure
-bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh) -- --build --flash --provision --monitor
-bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh) -- --port /dev/cu.usbmodem1101 --monitor
-bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh) -- --flash --kill-monitor
-bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap.sh) -- --no-qemu --no-cjson
+bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh) -- --build --flash --flash-mode secure
+bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh) -- --build --flash --provision --monitor
+bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh) -- --port /dev/cu.usbmodem1101 --monitor
+bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh) -- --flash --kill-monitor
+bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap.sh) -- --no-qemu --no-cjson
 ```
 
 </details>
@@ -174,7 +174,7 @@ messages to the board over serial.
    No-clone bootstrap:
    ```bash
    ZCLAW_WEB_API_KEY='choose-a-long-random-secret' \
-   bash <(curl -fsSL https://raw.githubusercontent.com/tnm/zclaw/main/scripts/bootstrap-web-relay.sh) -- --serial-port /dev/cu.usbmodem1101 --host 0.0.0.0 --port 8787
+   bash <(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scripts/bootstrap-web-relay.sh) -- --serial-port /dev/cu.usbmodem1101 --host 0.0.0.0 --port 8787
    ```
 3. Open `http://<host>:8787` from phone or desktop.
 

@@ -317,7 +317,7 @@
   function addUtilityButtons() {
     var themeSwitcherTop = createThemeSwitcher('theme-switcher-top');
     var keysButtonTop = utilityButton('', 'keys-toggle', toggleShortcutPanel);
-    var repoButtonTop = utilityLink('Repo', 'repo-link repo-link-top', 'https://github.com/tnm/zclaw');
+    var repoButtonTop = utilityLink('Repo', 'repo-link repo-link-top', 'https://github.com/danielboro/zclaw');
     setButtonLabel(keysButtonTop, 'Keys');
     keysButtonTop.setAttribute('title', 'Show keyboard shortcuts (?)');
     keysButtonTop.setAttribute('aria-label', 'Show keyboard shortcuts');
@@ -347,7 +347,7 @@
       var themeSwitcherSide = createThemeSwitcher('theme-switcher-side');
       var readmeButtonSide = utilityLink('README (good for agents)', 'readme-link', 'reference/README_COMPLETE.md');
       var keysButtonSide = utilityButton('', '', toggleShortcutPanel);
-      var repoButtonSide = utilityLink('GitHub Repository', 'repo-link', 'https://github.com/tnm/zclaw');
+      var repoButtonSide = utilityLink('GitHub Repository', 'repo-link', 'https://github.com/danielboro/zclaw');
       setButtonLabel(keysButtonSide, 'Shortcuts');
       repoButtonSide.target = '_blank';
       repoButtonSide.rel = 'noopener noreferrer';

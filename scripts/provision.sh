@@ -710,7 +710,7 @@ verify_openrouter_api_key() {
     local api_url="${api_url_override:-${OPENROUTER_API_URL:-https://openrouter.ai/api/v1/models}}"
     local response_file
     local http_code
-    local referer="${OPENROUTER_HTTP_REFERER:-https://github.com/tnm/zclaw}"
+    local referer="${OPENROUTER_HTTP_REFERER:-https://github.com/danielboro/zclaw}"
     local title="${OPENROUTER_APP_TITLE:-zclaw}"
 
     if ! command -v curl >/dev/null 2>&1; then

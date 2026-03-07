@@ -1256,7 +1256,7 @@ echo ""
 if [ "$SETUP_INCOMPLETE" = true ]; then
     echo -e "  ${YELLOW}${BOLD}Almost there.${NC}  ${DIM}Finish repair/build, then re-run install or flash scripts.${NC}"
 else
-    echo -e "  ${GREEN}${BOLD}Ready to hack!${NC}  ${DIM}Questions? github.com/tnm/zclaw${NC}"
+    echo -e "  ${GREEN}${BOLD}Ready to hack!${NC}  ${DIM}Questions? github.com/danielboro/zclaw${NC}"
 fi
 echo ""
 echo -e "${DIM}─────────────────────────────────────────────────────────────${NC}"

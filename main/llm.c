@@ -720,7 +720,7 @@ esp_err_t llm_request(const char *request_json, char *response_buf, size_t respo
 
         // OpenRouter needs additional headers
         if (s_backend == LLM_BACKEND_OPENROUTER) {
-            esp_http_client_set_header(client, "HTTP-Referer", "https://github.com/tnm/zclaw");
+            esp_http_client_set_header(client, "HTTP-Referer", "https://github.com/danielboro/zclaw");
             esp_http_client_set_header(client, "X-Title", "zclaw");
         }
     }
