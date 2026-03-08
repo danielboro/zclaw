@@ -1,5 +1,5 @@
 # Target
-CONFIG_IDF_TARGET="esp32c3"
+CONFIG_IDF_TARGET="esp32"
 
 # Partition table
 CONFIG_PARTITION_TABLE_CUSTOM=y
