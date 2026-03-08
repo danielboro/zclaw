@@ -1,3 +1,4 @@
+an adaptation of tnm/zclaw to work better on an ESP32 T-Display 1.14 classic
 # zclaw
 
 <img
