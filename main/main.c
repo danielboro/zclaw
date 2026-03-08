@@ -16,6 +16,7 @@
 #include "gpio_policy.h"
 #ifdef CONFIG_ZCLAW_T_DISPLAY
 #include "power_tdisplay.h"
+#include "display_tdisplay.h"
 #endif
 
 #include "freertos/FreeRTOS.h"
@@ -518,6 +519,14 @@ void app_main(void)
     }
 #endif
     tools_init();
+#if CONFIG_ZCLAW_T_DISPLAY
+    esp_err_t display_init_err = display_init();
+    if (display_init_err != ESP_OK) {
+        ESP_LOGW(TAG, "Display init failed: %s", esp_err_to_name(display_init_err));
+    } else {
+        display_start_task();
+    }
+#endif
 
     // 12. Initialize USB serial channel
     channel_init();
