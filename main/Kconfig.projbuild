@@ -110,3 +110,10 @@ menu "zclaw Configuration"
     endmenu
 
 endmenu
+
+config ZCLAW_T_DISPLAY
+    bool "Enable T-Display support"
+    default y
+    help
+        Enable support for LILYGO T-Display (ST7789 display, battery ADC, button).
+

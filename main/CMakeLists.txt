@@ -32,6 +32,10 @@ idf_component_register(
         "boot_guard.c"
         "user_tools.c"
         "wifi_credentials.c"
+        "tools_power.c"
+        "display_tdisplay.c"
+        "font8x8.c"
+        "power_tdisplay.c"
     INCLUDE_DIRS "."
     REQUIRES
         nvs_flash

@@ -15,8 +15,10 @@ void display_clear(void);
 void display_text(int x, int y, const char *text, uint16_t color);
 void display_battery(int x, int y, uint8_t percent, bool charging);
 void display_backlight(bool on);
+void display_start_task(void);
 esp_err_t display_set_message(const char *msg);
 void display_set_button_enabled(bool enable);
+void display_start_task(void);
 
 #ifdef __cplusplus
 }
