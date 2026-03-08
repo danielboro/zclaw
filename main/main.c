@@ -14,6 +14,9 @@
 #include "messages.h"
 #include "wifi_credentials.h"
 #include "gpio_policy.h"
+#ifdef CONFIG_ZCLAW_T_DISPLAY
+#include "power_tdisplay.h"
+#endif
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -434,6 +437,8 @@ void app_main(void)
 
     ESP_ERROR_CHECK(llm_init());
     ratelimit_init();
+#if CONFIG_ZCLAW_T_DISPLAY
+#endif
     tools_init();
     channel_init();
 
@@ -512,8 +517,6 @@ void app_main(void)
         fail_fast_startup("telegram_init", telegram_init_err);
     }
 #endif
-
-    // 11. Register tools
     tools_init();
 
     // 12. Initialize USB serial channel

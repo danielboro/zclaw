@@ -114,3 +114,7 @@ TOOL_ENTRY("delete_user_tool",
            "Delete a user-created custom tool by name.",
            "{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"Tool name to delete\"}},\"required\":[\"name\"]}",
            tools_delete_user_tool_handler)
+TOOL_ENTRY("battery_status",
+           "Read battery voltage, percentage, and USB power status. For T-Display.",
+           "{\"type\":\"object\",\"properties\":{}}",
+           tools_battery_status_handler)
