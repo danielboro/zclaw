@@ -37,3 +37,6 @@ __pycache__/
 *~
 *.swp
 *.swo
+
+# Project management metadata (contains secrets)
+.a0proj/
