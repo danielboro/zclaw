@@ -271,7 +271,8 @@ void display_clear(void)
 
 void display_text(int x, int y, const char *text, uint16_t color)
 {
-    if (x < 0) x = 0; if (y < 0) y = 0;
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
     tft_draw_string(x, y, text, color, 0x0000);
 }
 
