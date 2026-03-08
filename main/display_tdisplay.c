@@ -1,3 +1,4 @@
+#include "esp_system.h"
 #ifdef CONFIG_ZCLAW_T_DISPLAY
 
 #include "display_tdisplay.h"
@@ -5,8 +6,8 @@
 #include "esp_log.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
+#include "power_tdisplay.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -18,6 +19,7 @@ static const char *TAG = "display_tdisplay";
 #define TFT_CS_GPIO 5
 #define TFT_DC_GPIO 16
 #define TFT_BL_GPIO 4
+#define BUTTON_GPIO 0
 
 // SPI
 static spi_device_handle_t tft_spi = NULL;
@@ -34,9 +36,8 @@ static SemaphoreHandle_t spi_mutex;
 #define CMD_RASET   0x2B
 #define CMD_RAMWR   0x2C
 
-// Orientation: portrait (135x240). Use MX bit to mirror X.
 #define MADCTL_PORTRAIT 0x40
-#define COLOR_MODE_16BIT 0x55 // RGB565
+#define COLOR_MODE_16BIT 0x55
 
 #define SPI_BUF_SIZE 1024
 static uint8_t spi_tx_buf[SPI_BUF_SIZE];
@@ -133,7 +134,34 @@ static void tft_draw_string(uint16_t x, uint16_t y, const char *str, uint16_t fg
     }
 }
 
-// Message buffer for displaying text
+// Message buffer
+esp_err_t display_set_message(const char *msg);
+
+// --- Button backlight toggle state ---
+static volatile bool button_enabled = true;
+static volatile bool backlight_state = true; // track current state
+static volatile TickType_t last_toggle_tick = 0;
+static const TickType_t DEBOUNCE_MS = pdMS_TO_TICKS(50);
+
+static void IRAM_ATTR button_isr_handler(void* arg)
+{
+    TickType_t now = xTaskGetTickCountFromISR();
+    if ((now - last_toggle_tick) >= DEBOUNCE_MS) {
+        if (button_enabled) {
+            backlight_state = !backlight_state;
+            gpio_set_level(TFT_BL_GPIO, backlight_state ? 1 : 0);
+        }
+        last_toggle_tick = now;
+    }
+}
+
+void display_set_button_enabled(bool enable)
+{
+    // Simple mutex could be used but volatile bool is safe for single writer/reader
+    button_enabled = enable;
+}
+
+// --- Display state ---
 static char display_message[128] = "";
 static SemaphoreHandle_t msg_mutex = NULL;
 
@@ -184,7 +212,7 @@ esp_err_t display_init(void)
     msg_mutex = xSemaphoreCreateMutex();
     if (!msg_mutex) { vSemaphoreDelete(spi_mutex); return ESP_ERR_NO_MEM; }
 
-    // GPIOs
+    // GPIOs for display
     gpio_config_t io_conf = {0};
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
@@ -209,6 +237,29 @@ esp_err_t display_init(void)
     vTaskDelay(pdMS_TO_TICKS(20));
 
     display_backlight(true);
+    backlight_state = true;
+
+    // Configure BUTTON (GPIO0) as input with pull-up
+    gpio_config_t btn_conf = {0};
+    btn_conf.intr_type = GPIO_INTR_NEGEDGE; // falling edge
+    btn_conf.mode = GPIO_MODE_INPUT;
+    btn_conf.pin_bit_mask = (1ULL << BUTTON_GPIO);
+    btn_conf.pull_up_en = 1;
+    btn_conf.pull_down_en = 0;
+    gpio_config(&btn_conf);
+
+    // Install ISR service and add handler
+    esp_err_t err = gpio_install_isr_service(0);
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "gpio_install_isr_service failed: %s", esp_err_to_name(err));
+    }
+    err = gpio_isr_handler_add(BUTTON_GPIO, button_isr_handler, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "gpio_isr_handler_add failed: %s", esp_err_to_name(err));
+    } else {
+        ESP_LOGI(TAG, "Button (GPIO%d) ISR installed for backlight toggle", BUTTON_GPIO);
+    }
+
     ESP_LOGI(TAG, "Display initialized");
     return ESP_OK;
 }
@@ -247,23 +298,25 @@ void display_battery(int x, int y, uint8_t percent, bool charging)
 void display_backlight(bool on)
 {
     gpio_set_level(TFT_BL_GPIO, on ? 1 : 0);
+    backlight_state = on;
 }
 
-void display_set_message(const char *msg)
+esp_err_t display_set_message(const char *msg)
 {
     if (xSemaphoreTake(msg_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         strncpy(display_message, msg, sizeof(display_message)-1);
         display_message[sizeof(display_message)-1] = '\0';
         xSemaphoreGive(msg_mutex);
+        return ESP_OK;
     }
+    return ESP_ERR_TIMEOUT;
 }
 
 static void display_task(void *pvParameters)
 {
-    vTaskDelay(pdMS_TO_TICKS(500)); // wait for system init
+    vTaskDelay(pdMS_TO_TICKS(500));
     while (1) {
-        extern uint8_t power_get_battery_percent(void);
-        extern bool usb_is_powered(void);
+        #include "power_tdisplay.h"
         uint8_t pct = power_get_battery_percent();
         bool charging = usb_is_powered();
 
