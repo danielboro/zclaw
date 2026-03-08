@@ -61,3 +61,8 @@ CONFIG_ZCLAW_GPIO_MAX_PIN=39
 # CONFIG_ZCLAW_GPIO_MAX_PIN=35
 # Optional explicit allowlist for T-Display (if desired):
 # CONFIG_ZCLAW_GPIO_ALLOWED_PINS="0,14,34,35"
+
+# LLM fallback configuration
+CONFIG_ZCLAW_LLM_FALLBACK=y
+CONFIG_ZCLAW_LLM_FALLBACK_URL="http://localhost:11434/v1"
+CONFIG_ZCLAW_LLM_FALLBACK_MODEL="llama2"

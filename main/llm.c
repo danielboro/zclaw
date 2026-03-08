@@ -754,6 +754,94 @@ esp_err_t llm_request(const char *request_json, char *response_buf, size_t respo
 
     esp_http_client_cleanup(client);
     http_gate_release();
+    // LLM fallback: if primary failed and fallback is enabled, retry with local Ollama
+    #if CONFIG_ZCLAW_LLM_FALLBACK
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Primary LLM request failed (err=%s), trying fallback", esp_err_to_name(err));
+
+        // Re-acquire HTTP gate for fallback request
+        bool fallback_gate_acquired = http_gate_acquire("llm_request_fallback", pdMS_TO_TICKS(http_gate_wait_ms));
+        if (!fallback_gate_acquired) {
+            ESP_LOGE(TAG, "Failed to acquire HTTP gate for fallback");
+            http_gate_release();
+            return err;
+        }
+
+        // Reset response context for fallback
+        ctx.len = 0;
+        ctx.truncated = false;
+        memset(ctx.buf, 0, ctx.max);
+
+        // Create fallback client with local Ollama URL
+        const char *fallback_url = CONFIG_ZCLAW_LLM_FALLBACK_URL;
+        esp_http_client_config_t fallback_config = {
+            .url = fallback_url,
+            .event_handler = http_event_handler,
+            .user_data = &ctx,
+            .timeout_ms = LLM_HTTP_TIMEOUT_MS,
+            .crt_bundle_attach = esp_crt_bundle_attach,
+        };
+
+        esp_http_client_handle_t fallback_client = esp_http_client_init(&fallback_config);
+        if (!fallback_client) {
+            ESP_LOGE(TAG, "Failed to init fallback HTTP client");
+            http_gate_release();
+            return ESP_FAIL;
+        }
+
+        // Set headers (same as primary)
+        esp_http_client_set_method(fallback_client, HTTP_METHOD_POST);
+        esp_http_client_set_header(fallback_client, "Content-Type", "application/json");
+
+        // Backend-specific auth headers
+        if (s_backend == LLM_BACKEND_ANTHROPIC) {
+            esp_http_client_set_header(fallback_client, "x-api-key", s_api_key);
+            esp_http_client_set_header(fallback_client, "anthropic-version", "2023-06-01");
+        } else if (s_backend == LLM_BACKEND_OPENAI || s_backend == LLM_BACKEND_OPENROUTER ||
+                   (s_backend == LLM_BACKEND_OLLAMA && s_api_key[0] != '\0')) {
+            char auth_header[LLM_AUTH_HEADER_BUF_SIZE];
+            if (!llm_build_bearer_auth_header(s_api_key, auth_header, sizeof(auth_header))) {
+                ESP_LOGE(TAG, "API key length exceeds auth header capacity for fallback");
+                esp_http_client_cleanup(fallback_client);
+                http_gate_release();
+                return ESP_ERR_INVALID_SIZE;
+            }
+            esp_http_client_set_header(fallback_client, "Authorization", auth_header);
+
+            if (s_backend == LLM_BACKEND_OPENROUTER) {
+                esp_http_client_set_header(fallback_client, "HTTP-Referer", "https://github.com/danielboro/zclaw");
+                esp_http_client_set_header(fallback_client, "X-Title", "zclaw");
+            }
+        }
+
+        // Set request body
+        esp_http_client_set_post_field(fallback_client, request_json, strlen(request_json));
+
+        ESP_LOGI(TAG, "Attempting fallback LLM request to %s", fallback_url);
+        esp_err_t fallback_err = esp_http_client_perform(fallback_client);
+
+        if (fallback_err == ESP_OK) {
+            int fallback_status = esp_http_client_get_status_code(fallback_client);
+            ESP_LOGI(TAG, "Fallback response: %d, %d bytes", fallback_status, (int)ctx.len);
+
+            if (fallback_status == 200 && !ctx.truncated) {
+                ESP_LOGI(TAG, "Fallback LLM request succeeded");
+                esp_http_client_cleanup(fallback_client);
+                http_gate_release();
+                return ESP_OK;
+            } else {
+                ESP_LOGE(TAG, "Fallback LLM request failed: status=%d, truncated=%d", fallback_status, ctx.truncated);
+                fallback_err = ESP_FAIL;
+            }
+        } else {
+            ESP_LOGE(TAG, "Fallback HTTP request failed: %s", esp_err_to_name(fallback_err));
+        }
+
+        esp_http_client_cleanup(fallback_client);
+        http_gate_release();
+        return fallback_err;
+    }
+    #endif
 
     return err;
 #endif
