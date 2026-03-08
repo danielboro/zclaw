@@ -291,7 +291,7 @@ void display_battery(int x, int y, uint8_t percent, bool charging)
         tft_fill_rect(x+bat_w-2, y+1, 1, 3, 0xFFFF);
         tft_fill_rect(x+bat_w-4, y+2, 3, 1, 0xFFFF);
     }
-    char pct_str[4];
+    char pct_str[5];
     snprintf(pct_str, sizeof(pct_str), "%d%%", percent);
     tft_draw_string(x+bat_w+2, y, pct_str, 0xFFFF, 0x0000);
 }
