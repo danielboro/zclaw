@@ -142,6 +142,7 @@ TOOL_ENTRY("display_battery",
            "Display battery icon and percentage on T-Display screen at (x,y).",
            "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\"},\"y\":{\"type\":\"integer\"},\"percent\":{\"type\":\"integer\",\"min\":0,\"max\":100},\"charging\":{\"type\":\"boolean\"}},\"required\":[\"x\",\"y\",\"percent\"]}",
            tools_display_battery_handler)
+TOOL_ENTRY("test_screen", "Turns screen on, displays test text for 5 seconds, then turns off.", "{}", tools_test_screen_handler)
 TOOL_ENTRY("red",
            "Displays the word 'red' in red color at position (5,5).",
            "{\"type\":\"object\",\"properties\":{}}",
