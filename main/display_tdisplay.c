@@ -367,23 +367,4 @@ bool tools_display_text_handler(const cJSON *input, char *result, size_t result_
     display_text(x, y, text, color);
     snprintf(result, result_len, "Displayed text at (%d,%d): %s", x, y, text);
     return true;
-}bool tools_display_battery_handler(const cJSON *input, char *result, size_t result_len) {
-    cJSON *jx = cJSON_GetObjectItem(input, "x");
-    cJSON *jy = cJSON_GetObjectItem(input, "y");
-    cJSON *jp = cJSON_GetObjectItem(input, "percent");
-    if (!jx || !jy || !jp) {
-        snprintf(result, result_len, "Error: Missing required parameters x, y, or percent");
-        return false;
-    }
-    int x = jx->valueint;
-    int y = jy->valueint;
-    int percent = jp->valueint;
-    bool charging = false;
-    cJSON *jc = cJSON_GetObjectItem(input, "charging");
-    if (jc) charging = jc->valueint != 0;
-
-    display_battery(x, y, (uint8_t)percent, charging);
-    snprintf(result, result_len, "Displayed battery at (%d,%d): %d%% %s",
-             x, y, percent, charging ? " (charging)" : "");
-    return true;
 }
