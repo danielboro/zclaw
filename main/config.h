@@ -100,13 +100,13 @@ typedef enum {
 #ifdef CONFIG_ZCLAW_GPIO_MIN_PIN
 #define GPIO_MIN_PIN            CONFIG_ZCLAW_GPIO_MIN_PIN
 #else
-#define GPIO_MIN_PIN            2
+#define GPIO_MIN_PIN            0
 #endif
 
 #ifdef CONFIG_ZCLAW_GPIO_MAX_PIN
 #define GPIO_MAX_PIN            CONFIG_ZCLAW_GPIO_MAX_PIN
 #else
-#define GPIO_MAX_PIN            10
+#define GPIO_MAX_PIN            39
 #endif
 
 #ifdef CONFIG_ZCLAW_GPIO_ALLOWED_PINS
