@@ -346,6 +346,15 @@ void display_start_task(void)
     xTaskCreate(&display_task, "display_task", 4096, NULL, 5, NULL);
 }
 
+
+
+// Tool: red
+bool tools_red_handler(const cJSON *input, char *result, size_t result_len) {
+    (void)input; // unused
+    display_text(5, 5, "red", 0xF800);
+    snprintf(result, result_len, "Displayed red at (5,5) in color 0xF800");
+    return true;
+}
 #endif // CONFIG_ZCLAW_T_DISPLAY
 
 // Display tool handlers

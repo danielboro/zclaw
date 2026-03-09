@@ -50,3 +50,5 @@ bool tools_battery_percent_handler(const cJSON *input, char *result, size_t resu
 bool tools_display_text_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_display_battery_handler(const cJSON *input, char *result, size_t result_len);
 #endif // TOOLS_HANDLERS_H
+// Red tool
+bool tools_red_handler(const cJSON *input, char *result, size_t result_len);
