@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 static const char *TAG = "display_tdisplay";
 
@@ -131,16 +132,13 @@ static void tft_draw_string(uint16_t x, uint16_t y, const char *str, uint16_t fg
     for (int i = 0; str[i]; i++) {
         tft_draw_char(cursor_x, y, str[i], fg, bg);
         cursor_x += 8;
-        if (cursor_x >= TFT_WIDTH) break;
+        if (cursor_x >= 240) break;
     }
 }
 
-// Message buffer
-esp_err_t display_set_message(const char *msg);
-
 // --- Button backlight toggle state ---
 static volatile bool button_enabled = true;
-static volatile bool backlight_state = true; // track current state
+static volatile bool backlight_state = true;
 static volatile TickType_t last_toggle_tick = 0;
 static const TickType_t DEBOUNCE_MS = pdMS_TO_TICKS(50);
 
@@ -158,7 +156,6 @@ static void IRAM_ATTR button_isr_handler(void* arg)
 
 void display_set_button_enabled(bool enable)
 {
-    // Simple mutex could be used but volatile bool is safe for single writer/reader
     button_enabled = enable;
 }
 
@@ -251,14 +248,13 @@ esp_err_t display_init(void)
 
     // Configure BUTTON (GPIO0) as input with pull-up
     gpio_config_t btn_conf = {0};
-    btn_conf.intr_type = GPIO_INTR_NEGEDGE; // falling edge
+    btn_conf.intr_type = GPIO_INTR_NEGEDGE;
     btn_conf.mode = GPIO_MODE_INPUT;
     btn_conf.pin_bit_mask = (1ULL << BUTTON_GPIO);
     btn_conf.pull_up_en = 1;
     btn_conf.pull_down_en = 0;
     gpio_config(&btn_conf);
 
-    // Install ISR service and add handler
     esp_err_t err = gpio_install_isr_service(0);
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGW(TAG, "gpio_install_isr_service failed: %s", esp_err_to_name(err));
@@ -276,7 +272,7 @@ esp_err_t display_init(void)
 
 void display_clear(void)
 {
-    tft_fill_rect(0, 0, TFT_WIDTH, TFT_HEIGHT, 0x0000);
+    tft_fill_rect(0, 0, 240, 135, 0x0000);
 }
 
 void display_text(int x, int y, const char *text, uint16_t color)
@@ -323,16 +319,14 @@ esp_err_t display_set_message(const char *msg)
     return ESP_ERR_TIMEOUT;
 }
 
-static void display_task(void *pvParameters)
-
-// Manual overlay API
+// Manual overlay API (for tools)
 void display_set_manual_text(int x, int y, const char *text, uint16_t color)
 {
     if (xSemaphoreTake(manual_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         manual_x = x;
         manual_y = y;
         strncpy(manual_text, text, sizeof(manual_text)-1);
-        manual_text[sizeof(manual_text)-1] = ' ';
+        manual_text[sizeof(manual_text)-1] = '\0';
         manual_color = color;
         manual_present = true;
         xSemaphoreGive(manual_mutex);
@@ -347,6 +341,7 @@ void display_clear_manual(void)
     }
 }
 
+static void display_task(void *pvParameters)
 {
     vTaskDelay(pdMS_TO_TICKS(500));
     while (1) {
@@ -363,7 +358,7 @@ void display_clear_manual(void)
         if (xSemaphoreTake(manual_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
             if (manual_present) {
                 strncpy(manual_buf, manual_text, sizeof(manual_buf)-1);
-                manual_buf[sizeof(manual_buf)-1] = ' ';
+                manual_buf[sizeof(manual_buf)-1] = '\0';
                 draw_manual = true;
             }
             xSemaphoreGive(manual_mutex);
@@ -414,7 +409,9 @@ bool tools_display_text_handler(const cJSON *input, char *result, size_t result_
     display_text(x, y, text, color);
     snprintf(result, result_len, "Displayed text at (%d,%d): %s", x, y, text);
     return true;
-}bool tools_display_battery_handler(const cJSON *input, char *result, size_t result_len) {
+}
+
+bool tools_display_battery_handler(const cJSON *input, char *result, size_t result_len) {
     cJSON *jx = cJSON_GetObjectItem(input, "x");
     cJSON *jy = cJSON_GetObjectItem(input, "y");
     cJSON *jp = cJSON_GetObjectItem(input, "percent");
@@ -434,11 +431,14 @@ bool tools_display_text_handler(const cJSON *input, char *result, size_t result_
              x, y, percent, charging ? " (charging)" : "");
     return true;
 }
+
 // Tool: red (convenience tool)
 bool tools_red_handler(const cJSON *input, char *result, size_t result_len) {
-    (void)input; // unused
+    (void)input;
     display_set_manual_text(5, 5, "red", 0xF800);
     snprintf(result, result_len, "Set red overlay at (5,5) in color 0xF800");
     return true;
 }
-}
+
+// Tool: test_screen - turns screen on, displays "TEST" in red for 5 seconds, then off
+
