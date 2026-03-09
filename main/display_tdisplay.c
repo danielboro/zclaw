@@ -442,7 +442,6 @@ bool tools_red_handler(const cJSON *input, char *result, size_t result_len) {
     return true;
 }
 
-
 // Test screen tool: on, text, wait 5s, off
 bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_len) {
     (void)input; // unused, no parameters needed
