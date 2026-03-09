@@ -36,6 +36,7 @@ idf_component_register(
         "display_tdisplay.c"
         "font8x8.c"
         "power_tdisplay.c"
+        "test_screen.c"
     INCLUDE_DIRS "."
     REQUIRES
         nvs_flash
@@ -50,7 +51,6 @@ idf_component_register(
         esp_driver_usb_serial_jtag
         app_update
         esp_adc
-    test_screen.c
 )
 
 set(ZCLAW_VERSION_FILE "${CMAKE_SOURCE_DIR}/VERSION")
