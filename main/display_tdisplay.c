@@ -350,26 +350,5 @@ void display_start_task(void)
 
 // Display tool handlers
 bool tools_display_text_handler(const cJSON *input, char *result, size_t result_len) {
-    int x = cJSON_GetObjectItem(input, "x")->valueint;
-    int y = cJSON_GetObjectItem(input, "y")->valueint;
-    const char *text = cJSON_GetObjectItem(input, "text")->valuestring;
-    uint16_t color = cJSON_GetObjectItem(input, "color") ? 
-                     (uint16_t)cJSON_GetObjectItem(input, "color")->valueint : 0xFFFF;
-    
-    display_text(x, y, text, color);
-    snprintf(result, result_len, "Displayed text at (%d,%d): %s", x, y, text);
-    return true;
-}
 
 bool tools_display_battery_handler(const cJSON *input, char *result, size_t result_len) {
-    int x = cJSON_GetObjectItem(input, "x")->valueint;
-    int y = cJSON_GetObjectItem(input, "y")->valueint;
-    int percent = cJSON_GetObjectItem(input, "percent")->valueint;
-    bool charging = cJSON_GetObjectItem(input, "charging") ? 
-                    cJSON_GetObjectItem(input, "charging")->valueint != 0 : false;
-    
-    display_battery(x, y, (uint8_t)percent, charging);
-    snprintf(result, result_len, "Displayed battery at (%d,%d): %d%% %s", 
-             x, y, percent, charging ? "(charging)" : "");
-    return true;
-}
