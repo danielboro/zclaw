@@ -1,0 +1,94 @@
+Using existing repository: /root/.local/share/zclaw/repo
+Warning: local modifications detected; skipping auto-update.
+Run from a clean checkout to auto-update branch 'main'.
+Running: ./install.sh
+
+[0;36m[1m
+███████  ██████ ██       █████  ██     ██
+   ███  ██      ██      ██   ██ ██     ██
+  ███   ██      ██      ███████ ██  █  ██
+ ███    ██      ██      ██   ██ ██ ███ ██
+███████  ██████ ███████ ██   ██  ███ ███
+[0m
+[2m─────────────────────────────────----------───────────[0m
+[0;35m[1m       The 5-dollar assistant in 888kb[0m
+[2m                  zclaw release v2.11.1[0m
+[2m───────────--------─────────────────────--────────────[0m
+
+[1mWelcome to the zclaw installer![0m
+
+This script will set up your development environment:
+  [0;32m•[0m ESP-IDF v5.4 [2m(required for building)[0m
+  [0;32m•[0m QEMU [2m(optional, for emulation)[0m
+  [0;32m•[0m cJSON [2m(optional, for host tests)[0m
+  [0;32m•[0m Flash helpers with serial + board-chip detection
+
+[0;32m✓[0m Detected OS: linux
+[0;32m✓[0m Detected Linux package manager: apt-get
+[0;32m✓[0m Loaded saved installer defaults from /root/.config/zclaw/install.env
+
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34m  ESP-IDF Toolchain[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m ESP-IDF found at /root/esp/esp-idf
+[0;32m✓[0m ESP-IDF environment is healthy (export.sh + idf.py)
+
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34m  QEMU Emulator (Optional)[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;33m![0m QEMU not found
+[0;32m✓[0m Install QEMU for ESP32 emulation?: yes (saved)
+Installing QEMU via apt-get...
+Hit:1 http://http.kali.org/kali kali-rolling InRelease
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+qemu-system-misc is already the newest version (1:10.2.1+ds-1).
+Solving dependencies...
+0 upgraded, 0 newly installed, 0 to remove and 212 not upgraded.
+[0;31m✗[0m QEMU installation failed
+
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34m  cJSON Library (Optional, for tests)[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m cJSON library found
+
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34m  Build zclaw[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+Build the firmware now? [y/N] 
+[0;36m[1m
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃                   SETUP COMPLETE                          ┃
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+[0m
+[1mCommands:[0m
+
+  [1;33m./scripts/build.sh[0m          [2mBuild firmware[0m
+  [1;33m./scripts/flash.sh[0m          [2mFlash to device[0m
+  [1;33m./scripts/flash-secure.sh[0m   [2mFlash with encryption[0m
+  [1;33m./scripts/provision.sh[0m      [2mWrite WiFi/API credentials to NVS[0m
+  [1;33m./scripts/monitor.sh[0m        [2mSerial monitor[0m
+  [1;33m./scripts/emulate.sh[0m        [2mRun in QEMU[0m
+
+[1mInstall flags:[0m
+
+  [1;33m./install.sh --build --flash --flash-mode secure[0m
+  [1;33m./install.sh -y --build --flash --provision[0m
+  [1;33m./install.sh --flash --provision[0m
+  [1;33m./install.sh --port /dev/cu.usbmodem* --monitor[0m
+  [1;33m./install.sh --flash --kill-monitor[0m
+  [1;33m./install.sh --no-qemu --no-cjson[0m
+
+[1mPro tip:[0m Add to your shell config:
+  [1;33malias idf='source ~/esp/esp-idf/export.sh'[0m
+  [2mIf that fails: cd ~/esp/esp-idf && ./install.sh esp32,esp32c3,esp32c6,esp32s3[0m
+  [2mInstaller defaults: /root/.config/zclaw/install.env ([1;33m--no-remember[2m to disable)[0m
+
+[2m─────────────────────────────────────────────────────────────[0m
+
+  [0;32m[1mReady to hack![0m  [2mQuestions? github.com/danielboro/zclaw[0m
+
+[2m─────────────────────────────────────────────────────────────[0m
+
