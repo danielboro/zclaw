@@ -50,6 +50,7 @@ idf_component_register(
         esp_driver_usb_serial_jtag
         app_update
         esp_adc
+    test_screen.c
 )
 
 set(ZCLAW_VERSION_FILE "${CMAKE_SOURCE_DIR}/VERSION")
