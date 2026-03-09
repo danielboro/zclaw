@@ -218,9 +218,9 @@ esp_err_t display_init(void)
     spi_mutex = xSemaphoreCreateMutex();
     if (!spi_mutex) return ESP_ERR_NO_MEM;
     msg_mutex = xSemaphoreCreateMutex();
+    if (!msg_mutex) { vSemaphoreDelete(spi_mutex); return ESP_ERR_NO_MEM; }
     manual_mutex = xSemaphoreCreateMutex();
     if (!manual_mutex) { vSemaphoreDelete(spi_mutex); vSemaphoreDelete(msg_mutex); return ESP_ERR_NO_MEM; }
-    if (!msg_mutex) { vSemaphoreDelete(spi_mutex); return ESP_ERR_NO_MEM; }
 
     // GPIOs for display
     gpio_config_t io_conf = {0};
@@ -323,6 +323,7 @@ esp_err_t display_set_message(const char *msg)
     return ESP_ERR_TIMEOUT;
 }
 
+static void display_task(void *pvParameters)
 
 // Manual overlay API
 void display_set_manual_text(int x, int y, const char *text, uint16_t color)
@@ -346,7 +347,6 @@ void display_clear_manual(void)
     }
 }
 
-static void display_task(void *pvParameters)
 {
     vTaskDelay(pdMS_TO_TICKS(500));
     while (1) {
@@ -356,6 +356,7 @@ static void display_task(void *pvParameters)
 
         display_clear();
         display_battery(5, 5, pct, charging);
+
         // Draw manual overlay if active
         char manual_buf[128];
         bool draw_manual = false;
@@ -370,7 +371,6 @@ static void display_task(void *pvParameters)
         if (draw_manual) {
             display_text(manual_x, manual_y, manual_buf, manual_color);
         }
-
 
         char msg[128];
         if (xSemaphoreTake(msg_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
@@ -440,4 +440,5 @@ bool tools_red_handler(const cJSON *input, char *result, size_t result_len) {
     display_set_manual_text(5, 5, "red", 0xF800);
     snprintf(result, result_len, "Set red overlay at (5,5) in color 0xF800");
     return true;
+}
 }
