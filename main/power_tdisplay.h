@@ -13,6 +13,7 @@ esp_err_t power_init(void);
 uint16_t power_get_vbat_mv(void);
 uint8_t power_get_battery_percent(void);
 bool usb_is_powered(void);
+uint16_t power_get_raw_adc(void);
 
 #ifdef __cplusplus
 }

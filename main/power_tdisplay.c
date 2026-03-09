@@ -142,3 +142,8 @@ bool usb_is_powered(void)
 }
 
 #endif // CONFIG_ZCLAW_T_DISPLAY
+
+uint16_t power_get_raw_adc(void)
+{
+    return read_raw_adc();
+}

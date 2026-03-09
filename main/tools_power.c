@@ -42,4 +42,26 @@ bool tools_battery_status_handler(const cJSON *input, char *result, size_t resul
     return true;
 }
 
+
+
+bool tools_battery_raw_handler(const cJSON *input, char *result, size_t result_len) {
+    (void)input;
+    uint16_t raw = power_get_raw_adc();
+    snprintf(result, result_len, "Battery raw ADC: %d", raw);
+    return true;
+}
+
+bool tools_battery_voltage_handler(const cJSON *input, char *result, size_t result_len) {
+    (void)input;
+    uint16_t mv = power_get_vbat_mv();
+    snprintf(result, result_len, "Battery voltage: %d mV", mv);
+    return true;
+}
+
+bool tools_battery_percent_handler(const cJSON *input, char *result, size_t result_len) {
+    (void)input;
+    uint8_t pct = power_get_battery_percent();
+    snprintf(result, result_len, "Battery: %d%%", pct);
+    return true;
+}
 #endif // CONFIG_ZCLAW_T_DISPLAY

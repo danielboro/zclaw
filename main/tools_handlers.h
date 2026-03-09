@@ -43,4 +43,10 @@ bool tools_create_tool_handler(const cJSON *input, char *result, size_t result_l
 bool tools_list_user_tools_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_delete_user_tool_handler(const cJSON *input, char *result, size_t result_len);
 
+// Battery & Display (T-Display)
+bool tools_battery_raw_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_battery_voltage_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_battery_percent_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_display_text_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_display_battery_handler(const cJSON *input, char *result, size_t result_len);
 #endif // TOOLS_HANDLERS_H

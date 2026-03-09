@@ -118,3 +118,27 @@ TOOL_ENTRY("battery_status",
            "Read battery voltage, percentage, and USB power status. For T-Display.",
            "{\"type\":\"object\",\"properties\":{}}",
            tools_battery_status_handler)
+
+// Battery (T-Display)
+TOOL_ENTRY("battery_raw",
+           "Read raw ADC value from battery sensor (GPIO34). Returns integer 0-4095.",
+           "{\"type\":\"object\",\"properties\":{}},\"required\":[]}",
+           tools_battery_raw_handler)
+TOOL_ENTRY("battery_voltage",
+           "Read battery voltage in millivolts (mV). Uses calibration if available.",
+           "{\"type\":\"object\",\"properties\":{}},\"required\":[]}",
+           tools_battery_voltage_handler)
+TOOL_ENTRY("battery_percent",
+           "Read battery percentage (0-100%). Estimates based on voltage curves.",
+           "{\"type\":\"object\",\"properties\":{}},\"required\":[]}",
+           tools_battery_percent_handler)
+
+// Display (T-Display)
+TOOL_ENTRY("display_text",
+           "Display text on T-Display screen at (x,y) coordinates. Color is 16-bit RGB565.",
+           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\"},\"y\":{\"type\":\"integer\"},\"text\":{\"type\":\"string\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default 0xFFFF white)\"}},\"required\":[\"x\",\"y\",\"text\"]}",
+           tools_display_text_handler)
+TOOL_ENTRY("display_battery",
+           "Display battery icon and percentage on T-Display screen at (x,y).",
+           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\"},\"y\":{\"type\":\"integer\"},\"percent\":{\"type\":\"integer\",\"min\":0,\"max\":100},\"charging\":{\"type\":\"boolean\"}},\"required\":[\"x\",\"y\",\"percent\"]}",
+           tools_display_battery_handler)
