@@ -4,6 +4,7 @@
 #include "cJSON.h"
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 // Tool handler convention:
 // - return true when the operation is handled (including benign "not found" states)

@@ -164,6 +164,12 @@ void display_set_button_enabled(bool enable)
 
 // --- Display state ---
 static char display_message[128] = "";
+n// Manual overlay (for tools)
+static char manual_text[128] = "";
+static int manual_x = 0, manual_y = 0;
+static uint16_t manual_color = 0xFFFF;
+static bool manual_present = false;
+static SemaphoreHandle_t manual_mutex = NULL;
 static SemaphoreHandle_t msg_mutex = NULL;
 
 esp_err_t display_init(void)
@@ -211,6 +217,8 @@ esp_err_t display_init(void)
     spi_mutex = xSemaphoreCreateMutex();
     if (!spi_mutex) return ESP_ERR_NO_MEM;
     msg_mutex = xSemaphoreCreateMutex();
+    manual_mutex = xSemaphoreCreateMutex();
+    if (!manual_mutex) { vSemaphoreDelete(spi_mutex); vSemaphoreDelete(msg_mutex); return ESP_ERR_NO_MEM; }
     if (!msg_mutex) { vSemaphoreDelete(spi_mutex); return ESP_ERR_NO_MEM; }
 
     // GPIOs for display
@@ -324,6 +332,20 @@ static void display_task(void *pvParameters)
 
         display_clear();
         display_battery(5, 5, pct, charging);
+        // Draw manual overlay if active
+        char manual_buf[128];
+        bool draw_manual = false;
+        if (xSemaphoreTake(manual_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            if (manual_present) {
+                strncpy(manual_buf, manual_text, sizeof(manual_buf)-1);
+                manual_buf[sizeof(manual_buf)-1] = 0;
+                draw_manual = true;
+            }
+            xSemaphoreGive(manual_mutex);
+        }
+        if (draw_manual) {
+            display_text(manual_x, manual_y, manual_buf, manual_color);
+        }
 
         char msg[128];
         if (xSemaphoreTake(msg_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
