@@ -441,21 +441,4 @@ bool tools_red_handler(const cJSON *input, char *result, size_t result_len) {
     snprintf(result, result_len, "Set red overlay at (5,5) in color 0xF800");
     return true;
 }
-
-// Test screen tool: on, text, wait 5s, off
-bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_len) {
-    (void)input; // unused, no parameters needed
-    // Turn backlight on
-    display_backlight(true);
-    // Set manual overlay with test text in green (0x07E0)
-    display_set_manual_text(10, 10, "TEST", 0x07E0);
-    // Wait 5 seconds
-    vTaskDelay(pdMS_TO_TICKS(5000));
-    // Turn backlight off
-    display_backlight(false);
-    // Clear manual overlay
-    display_clear_manual();
-    snprintf(result, result_len, "Screen test: displayed TEST for 5s and turned off");
-    return true;
-}
 }
