@@ -1,3 +1,4 @@
+#include "sdkconfig.h"
 #ifdef CONFIG_ZCLAW_T_DISPLAY
 
 #include "power_tdisplay.h"
@@ -19,7 +20,7 @@ static const char *TAG = "power_tdisplay";
 static adc_oneshot_unit_handle_t adc1_handle = NULL;
 static adc_cali_handle_t adc1_cali_handle = NULL;
 static float ema_voltage = 0.0f;
-static SemphrHandle_t adc_mutex;
+static SemaphoreHandle_t adc_mutex;
 
 static esp_err_t adc_cali_init(void)
 {

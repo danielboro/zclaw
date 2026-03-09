@@ -6,6 +6,8 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <esp_err.h>
 
 esp_err_t power_init(void);
 uint16_t power_get_vbat_mv(void);

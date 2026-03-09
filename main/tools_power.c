@@ -1,4 +1,6 @@
+#include "sdkconfig.h"
 #ifdef CONFIG_ZCLAW_T_DISPLAY
+#include <stdio.h>
 
 #include "tools_power.h"
 #include "power_tdisplay.h"
