@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
+static bool s_display_initialized = false;
 
 static const char *TAG = "display_tdisplay";
 
@@ -267,6 +268,7 @@ esp_err_t display_init(void)
     }
 
     ESP_LOGI(TAG, "Display initialized");
+    s_display_initialized = true;
     return ESP_OK;
 }
 
@@ -314,6 +316,7 @@ esp_err_t display_set_message(const char *msg)
         strncpy(display_message, msg, sizeof(display_message)-1);
         display_message[sizeof(display_message)-1] = '\0';
         xSemaphoreGive(msg_mutex);
+    s_display_initialized = true;
         return ESP_OK;
     }
     return ESP_ERR_TIMEOUT;
@@ -442,3 +445,7 @@ bool tools_red_handler(const cJSON *input, char *result, size_t result_len) {
 
 // Tool: test_screen - turns screen on, displays "TEST" in red for 5 seconds, then off
 
+
+bool display_is_initialized(void) {
+    return s_display_initialized;
+}
