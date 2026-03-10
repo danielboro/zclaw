@@ -174,6 +174,12 @@ static SemaphoreHandle_t msg_mutex = NULL;
 
 esp_err_t display_init(void)
 {
+    // Prevent duplicate initialization
+    if (s_display_initialized) {
+        ESP_LOGW(TAG, "Display already initialized");
+        return ESP_OK;
+    }
+
     esp_err_t ret = ESP_OK;
 
     // SPI bus
@@ -200,10 +206,10 @@ esp_err_t display_init(void)
         .duty_cycle_pos = 0,
         .cs_ena_pretrans = 0,
         .cs_ena_posttrans = 0,
-        .clock_speed_hz = 40 * 1000 * 1000,
+        .clock_speed_hz = 20 * 1000 * 1000,
         .input_delay_ns = 0,
         .spics_io_num = TFT_CS_GPIO,
-        .flags = 0,
+        .flags = SPI_DEVICE_NO_DUMMY,
         .queue_size = 7,
     };
     if (tft_spi == NULL) {
@@ -248,29 +254,7 @@ esp_err_t display_init(void)
     display_backlight(true);
     backlight_state = true;
 
-    // Configure BUTTON (GPIO0) as input with pull-up
-    gpio_config_t btn_conf = {0};
-    btn_conf.intr_type = GPIO_INTR_NEGEDGE;
-    btn_conf.mode = GPIO_MODE_INPUT;
-    btn_conf.pin_bit_mask = (1ULL << BUTTON_GPIO);
-    btn_conf.pull_up_en = 1;
-    btn_conf.pull_down_en = 0;
-    gpio_config(&btn_conf);
-
-    esp_err_t err = gpio_install_isr_service(0);
-    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "gpio_install_isr_service failed: %s", esp_err_to_name(err));
-    }
-    err = gpio_isr_handler_add(BUTTON_GPIO, button_isr_handler, NULL);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "gpio_isr_handler_add failed: %s", esp_err_to_name(err));
-    } else {
-        ESP_LOGI(TAG, "Button (GPIO%d) ISR installed for backlight toggle", BUTTON_GPIO);
-    }
-
     ESP_LOGI(TAG, "Display initialized");
-    s_display_initialized = true;
-    s_display_initialized = true;
     return ESP_OK;
 }
 
@@ -318,8 +302,6 @@ esp_err_t display_set_message(const char *msg)
         strncpy(display_message, msg, sizeof(display_message)-1);
         display_message[sizeof(display_message)-1] = '\0';
         xSemaphoreGive(msg_mutex);
-    s_display_initialized = true;
-    s_display_initialized = true;
         return ESP_OK;
     }
     return ESP_ERR_TIMEOUT;
