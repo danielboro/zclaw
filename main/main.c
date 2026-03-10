@@ -430,7 +430,7 @@ void app_main(void)
     }
 #endif
 
-#if CONFIG_ZCLAW_EMULATOR_MODE
+#else
     ESP_LOGW(TAG, "Emulator mode enabled: skipping WiFi/NTP/Telegram startup");
 #ifndef CONFIG_ZCLAW_STUB_LLM
     ESP_LOGW(TAG, "Stub LLM is disabled; without network, LLM requests may fail");
@@ -438,11 +438,6 @@ void app_main(void)
 
     ESP_ERROR_CHECK(llm_init());
     ratelimit_init();
-#if CONFIG_ZCLAW_T_DISPLAY
-#endif
-    tools_init();
-    channel_init();
-
     QueueHandle_t input_queue = xQueueCreate(INPUT_QUEUE_LENGTH, sizeof(channel_msg_t));
     QueueHandle_t channel_output_queue = xQueueCreate(OUTPUT_QUEUE_LENGTH, sizeof(channel_output_msg_t));
     if (!input_queue || !channel_output_queue) {
@@ -527,6 +522,7 @@ void app_main(void)
         display_start_task();
         power_init();
         display_set_message("zclaw ready");
+    }
 
     // 12. Initialize USB serial channel
     channel_init();
