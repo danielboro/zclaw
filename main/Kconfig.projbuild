@@ -109,6 +109,18 @@ menu "zclaw Configuration"
                 Duration the reset pin must stay low to trigger factory reset.
     endmenu
 
+    config ZCLAW_LLM_FALLBACK
+        bool "Enable LLM fallback to local Ollama"
+        default y
+
+    config ZCLAW_LLM_FALLBACK_URL
+        string "Fallback LLM URL"
+        default "http://localhost:11434/v1"
+
+    config ZCLAW_LLM_FALLBACK_MODEL
+        string "Fallback model name"
+        default "llama2"
+
 endmenu
 
 config ZCLAW_T_DISPLAY

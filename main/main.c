@@ -525,8 +525,8 @@ void app_main(void)
         ESP_LOGW(TAG, "Display init failed: %s", esp_err_to_name(display_init_err));
     } else {
         display_start_task();
-    }
-#endif
+        power_init();
+        display_set_message("zclaw ready");
 
     // 12. Initialize USB serial channel
     channel_init();
