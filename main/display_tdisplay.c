@@ -1,4 +1,5 @@
 #include "esp_system.h"
+#include <stdio.h>
 #ifdef CONFIG_ZCLAW_T_DISPLAY
 
 #include "display_tdisplay.h"
@@ -12,7 +13,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-static bool s_display_initialized = false;
 static bool s_display_initialized = false;
 
 static const char *TAG = "display_tdisplay";
@@ -453,6 +453,3 @@ bool display_is_initialized(void) {
     return s_display_initialized;
 }
 
-bool display_is_initialized(void) {
-    return s_display_initialized;
-}
