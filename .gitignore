@@ -41,3 +41,4 @@ __pycache__/
 # Project management metadata (contains secrets)
 .a0proj/
 .github/
+.a0proj
