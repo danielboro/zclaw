@@ -17,10 +17,12 @@ bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_l
         }
     }
     display_backlight(true);
-    display_set_message("TEST");
+    // Use manual overlay so persistent boot message remains
+    display_set_manual_text(5, 5, "TEST", 0xF800);
     vTaskDelay(pdMS_TO_TICKS(5000));
-    display_set_message("");
-    display_backlight(false);
+    display_clear_manual();
+    // Do NOT clear display_message; leave boot message intact
+    // Do NOT turn off backlight; keep it on for normal operation
     snprintf(result, result_len, "Screen test completed");
     return true;
 }
