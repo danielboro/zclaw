@@ -28,4 +28,5 @@ void display_start_task(void);
 #endif
 
 nbool display_is_initialized(void);
+nbool display_is_initialized(void);
 #endif /* DISPLAY_TDISPLAY_H */
