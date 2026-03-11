@@ -296,7 +296,6 @@ static bool device_is_configured(void)
 #else
     return false;
 #endif
-}
 
 static void print_provisioning_help(void)
 {
@@ -327,7 +326,6 @@ static bool wifi_connect_sta(void)
 #else
         return false;
 #endif
-    }
 
     if (!memory_get(NVS_KEY_WIFI_PASS, pass, sizeof(pass))) {
 #if defined(CONFIG_ZCLAW_WIFI_PASSWORD)
@@ -336,7 +334,6 @@ static bool wifi_connect_sta(void)
 #else
         pass[0] = '\0';
 #endif
-    }
 
     if (!wifi_credentials_validate(ssid, pass, wifi_error, sizeof(wifi_error))) {
         ESP_LOGE(TAG, "Invalid WiFi credentials: %s", wifi_error);
@@ -390,7 +387,7 @@ static bool wifi_connect_sta(void)
 }
 
 void app_main(void)
-void app_main(void)
+{
 
 #if !CONFIG_ZCLAW_EMULATOR_MODE
 {
