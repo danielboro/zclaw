@@ -128,10 +128,7 @@ uint8_t power_get_battery_percent(void)
 {
     uint16_t vbat = power_get_vbat_mv();
     if (vbat > 4000) return 100;
-    if (vbat > 3800) return 80;
-    if (vbat > 3600) return 60;
-    if (vbat > 3400) return 40;
-    if (vbat > 3200) return 20;
+    if (vbat > 3000) return (vbat-3000)/10;
     return 0;
 }
 
