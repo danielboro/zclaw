@@ -413,22 +413,6 @@ void app_main(void)
     // 4. Boot loop protection
 #if !CONFIG_ZCLAW_EMULATOR_MODE
     int boot_count = boot_guard_get_persisted_count();
-
-    // Battery low during boot: if battery is critically low, go back to sleep
-    if (boot_count > 2 && !power_get_battery_percent()) {
-        ESP_LOGE(TAG, "");
-        ESP_LOGE(TAG, "========================================");
-        ESP_LOGE(TAG, "  battery low sleeping");
-        ESP_LOGE(TAG, "  connect to power");
-        ESP_LOGE(TAG, "========================================");
-        ESP_LOGE(TAG, "");
-        s_safe_mode = false;
-        boot_guard_set_persisted_count(2);
-        esp_deep_sleep_start();
-        while (!power_get_battery_percent()) {
-            vTaskDelay(pdMS_TO_TICKS(5000));
-        }
-    }
     int next_boot_count = boot_guard_next_count(boot_count);
     esp_err_t boot_count_err = boot_guard_set_persisted_count(next_boot_count);
     if (boot_count_err != ESP_OK) {
