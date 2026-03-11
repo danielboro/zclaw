@@ -408,10 +408,8 @@ void app_main(void)
     // 3. Check factory reset button
 #if !CONFIG_ZCLAW_EMULATOR_MODE
     check_factory_reset();
-#endif
 
     // 4. Boot loop protection
-#if !CONFIG_ZCLAW_EMULATOR_MODE
     int boot_count = boot_guard_get_persisted_count();
     int next_boot_count = boot_guard_next_count(boot_count);
     esp_err_t boot_count_err = boot_guard_set_persisted_count(next_boot_count);
@@ -428,7 +426,6 @@ void app_main(void)
         ESP_LOGE(TAG, "");
         s_safe_mode = true;
     }
-#endif
 
 #else
     ESP_LOGW(TAG, "Emulator mode enabled: skipping WiFi/NTP/Telegram startup");
