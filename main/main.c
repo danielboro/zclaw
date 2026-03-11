@@ -390,6 +390,14 @@ static bool wifi_connect_sta(void)
 }
 
 void app_main(void)
+{
+    ESP_LOGI(TAG, "");
+    ESP_LOGI(TAG, "========================================");
+    ESP_LOGI(TAG, "  zclaw v%s", ota_get_version());
+    ESP_LOGI(TAG, "  AI Agent on ESP32");
+    ESP_LOGI(TAG, "========================================");
+    ESP_LOGI(TAG, "");
+
     // 1. Initialize NVS
     ESP_ERROR_CHECK(memory_init());
     ESP_ERROR_CHECK(http_gate_init());
@@ -397,11 +405,13 @@ void app_main(void)
     // 2. Initialize OTA (check for pending rollback)
     ota_init();
 
-#if !CONFIG_ZCLAW_EMULATOR_MODE
     // 3. Check factory reset button
+#if !CONFIG_ZCLAW_EMULATOR_MODE
     check_factory_reset();
+#endif
 
     // 4. Boot loop protection
+#if !CONFIG_ZCLAW_EMULATOR_MODE
     int boot_count = boot_guard_get_persisted_count();
     int next_boot_count = boot_guard_next_count(boot_count);
     esp_err_t boot_count_err = boot_guard_set_persisted_count(next_boot_count);
@@ -418,66 +428,40 @@ void app_main(void)
         ESP_LOGE(TAG, "");
         s_safe_mode = true;
     }
+#endif
 
 #else
     ESP_LOGW(TAG, "Emulator mode enabled: skipping WiFi/NTP/Telegram startup");
 #ifndef CONFIG_ZCLAW_STUB_LLM
     ESP_LOGW(TAG, "Stub LLM is disabled; without network, LLM requests may fail");
 #endif
+
     ESP_ERROR_CHECK(llm_init());
     ratelimit_init();
     QueueHandle_t input_queue = xQueueCreate(INPUT_QUEUE_LENGTH, sizeof(channel_msg_t));
     QueueHandle_t channel_output_queue = xQueueCreate(OUTPUT_QUEUE_LENGTH, sizeof(channel_output_msg_t));
-    QueueHandle_t telegram_output_queue = NULL;
-#if CONFIG_ZCLAW_STUB_TELEGRAM
-    bool telegram_enabled = false;
-#else
-    bool telegram_enabled = telegram_is_configured();
-#endif
-    if (telegram_enabled) {
-        telegram_output_queue = xQueueCreate(TELEGRAM_OUTPUT_QUEUE_LENGTH, sizeof(telegram_msg_t));
-    }
-    if (!input_queue || !channel_output_queue || (telegram_enabled && !telegram_output_queue)) {
-        ESP_LOGE(TAG, "Failed to create queues");
+    if (!input_queue || !channel_output_queue) {
+        ESP_LOGE(TAG, "Failed to create emulator queues");
         esp_restart();
     }
+
     esp_err_t startup_err = channel_start(input_queue, channel_output_queue);
     if (startup_err != ESP_OK) {
         fail_fast_startup("channel_start", startup_err);
     }
-    if (telegram_enabled) {
-        startup_err = telegram_start(input_queue, telegram_output_queue);
-        if (startup_err != ESP_OK) {
-            fail_fast_startup("telegram_start", startup_err);
-        }
-    }
-    startup_err = agent_start(input_queue, channel_output_queue, telegram_output_queue);
+
+    startup_err = agent_start(input_queue, channel_output_queue, NULL);
     if (startup_err != ESP_OK) {
         fail_fast_startup("agent_start", startup_err);
     }
-    startup_err = cron_start(input_queue);
-    if (startup_err != ESP_OK) {
-        fail_fast_startup("cron_start", startup_err);
-    }
-    ESP_LOGI(TAG, "");
-    ESP_LOGI(TAG, "========================================");
-    ESP_LOGI(TAG, "  Ready! Free heap: %lu bytes", esp_get_free_heap_size());
-    ESP_LOGI(TAG, "========================================");
-    ESP_LOGI(TAG, "");
-    if (telegram_enabled && telegram_is_configured()) {
-        telegram_send_startup();
-    }
-    channel_write("
-zclaw emulator ready. Type a message and press Enter.
 
-");
+    channel_write("\r\nzclaw emulator ready. Type a message and press Enter.\r\n\r\n");
+
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-#endif  // CONFIG_ZCLAW_EMULATOR_MODE
+#else
 
-    // Continue only if not in emulator mode (emulator never reaches here)
-#ifndef CONFIG_ZCLAW_EMULATOR_MODE
     // 4. Check if configured or in safe mode
     if (!device_is_configured() || s_safe_mode) {
         if (s_safe_mode) {
@@ -539,7 +523,6 @@ zclaw emulator ready. Type a message and press Enter.
         power_init();
         display_set_message("zclaw ready");
     }
-#endif
 
     // 12. Initialize USB serial channel
     channel_init();
@@ -556,6 +539,7 @@ zclaw emulator ready. Type a message and press Enter.
     if (telegram_enabled) {
         telegram_output_queue = xQueueCreate(TELEGRAM_OUTPUT_QUEUE_LENGTH, sizeof(telegram_msg_t));
     }
+
     if (!input_queue || !channel_output_queue || (telegram_enabled && !telegram_output_queue)) {
         ESP_LOGE(TAG, "Failed to create queues");
         esp_restart();
@@ -599,74 +583,6 @@ zclaw emulator ready. Type a message and press Enter.
         telegram_send_startup();
     }
 
-#endif  // !CONFIG_ZCLAW_EMULATOR_MODE (normal path ends here)
     // app_main returns - FreeRTOS scheduler continues running tasks
+#endif
 }
-void app_main(void)
-{
-#if !CONFIG_ZCLAW_EMULATOR_MODE
-
-ESP_LOGI(TAG, "");
-ESP_LOGI(TAG, "========================================");
-ESP_LOGI(TAG, "  zclaw v%s", ota_get_version());
-ESP_LOGI(TAG, "  AI Agent on ESP32");
-ESP_LOGI(TAG, "========================================");
-ESP_LOGI(TAG, "");
-
-// 1. Initialize NVS
-ESP_ERROR_CHECK(memory_init());
-ESP_ERROR_CHECK(http_gate_init());
-
-// 2. Initialize OTA (check for pending rollback)
-ota_init();
-
-// 3. Check factory reset button
-
-check_factory_reset();
-
-
-// 4. Boot loop protection
-
-int boot_count = boot_guard_get_persisted_count();
-int next_boot_count = boot_guard_next_count(boot_count);
-esp_err_t boot_count_err = boot_guard_set_persisted_count(next_boot_count);
-if (boot_count_err != ESP_OK) {
-    ESP_LOGW(TAG, "Failed to persist boot counter: %s", esp_err_to_name(boot_count_err));
-}
-
-if (boot_guard_should_enter_safe_mode(boot_count, MAX_BOOT_FAILURES)) {
-    ESP_LOGE(TAG, "");
-    ESP_LOGE(TAG, "========================================");
-    ESP_LOGE(TAG, "  SAFE MODE - Too many boot failures");
-    ESP_LOGE(TAG, "  Hold BOOT button for factory reset");
-    ESP_LOGE(TAG, "========================================");
-    ESP_LOGE(TAG, "");
-    s_safe_mode = true;
-}
-#else
-    // Emulator mode
-    ESP_LOGW(TAG, "Emulator mode enabled - skipping hardware initialization");
-    // Initialize LLM (local)
-    llm_init();
-    // Start communication
-    input_queue = xQueueCreate(20, sizeof(agent_message_t));
-    channel_start();
-    agent_start(input_queue, log_queue);
-    // Start cron task
-    cron_start(input_queue);
-    // Print ready message
-    ESP_LOGI(TAG, "");
-    ESP_LOGI(TAG, "========================================");
-    ESP_LOGI(TAG, "  Ready! Free heap: %lu bytes", esp_get_free_heap_size());
-    ESP_LOGI(TAG, "========================================");
-    ESP_LOGI(TAG, "");
-    // Send startup notification on Telegram (if configured)
-    if (telegram_enabled && telegram_is_configured()) {
-        telegram_send_startup();
-    }
-    // Infinite loop - tasks run independently
-    while (1) { vTaskDelay(portMAX_DELAY); }
-#endif  // CONFIG_ZCLAW_EMULATOR_MODE
-    // app_main returns - FreeRTOS scheduler continues running tasks
-}
-
