@@ -428,7 +428,6 @@ void app_main(void)
         ESP_LOGE(TAG, "");
         s_safe_mode = true;
     }
-#endif
 
 #else
     ESP_LOGW(TAG, "Emulator mode enabled: skipping WiFi/NTP/Telegram startup");
@@ -460,129 +459,128 @@ void app_main(void)
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-#else
 
-    // 4. Check if configured or in safe mode
-    if (!device_is_configured() || s_safe_mode) {
-        if (s_safe_mode) {
-            ESP_LOGE(TAG, "");
-            ESP_LOGE(TAG, "========================================");
-            ESP_LOGE(TAG, "  SAFE MODE - Too many boot failures");
-            ESP_LOGE(TAG, "  Hold BOOT button for factory reset");
-            ESP_LOGE(TAG, "========================================");
-            ESP_LOGE(TAG, "");
-            ESP_LOGE(TAG, "Recovery options:");
-            ESP_LOGE(TAG, "  1) Hold BOOT for factory reset");
-            ESP_LOGE(TAG, "  2) Reflash firmware and reprovision");
-            ESP_LOGE(TAG, "");
-        } else {
-            print_provisioning_help();
-        }
-        while (1) {
-            vTaskDelay(pdMS_TO_TICKS(5000));
-        }
-    }
-
-    // 5. Connect to WiFi
-    if (!wifi_connect_sta()) {
-        ESP_LOGE(TAG, "WiFi failed, restarting...");
-        vTaskDelay(pdMS_TO_TICKS(3000));
-        esp_restart();
-    }
-
-    // 6. Start task to clear boot counter after stable period
-    if (xTaskCreate(clear_boot_count, "boot_ok", BOOT_OK_TASK_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create boot confirmation task");
-    }
-
-    // 7. Initialize cron (includes NTP sync)
-    ESP_ERROR_CHECK(cron_init());
-
-    // 8. Initialize LLM client
-    ESP_ERROR_CHECK(llm_init());
-
-    // 9. Initialize rate limiter
-    ratelimit_init();
-
-    // 10. Initialize Telegram
-#if CONFIG_ZCLAW_STUB_TELEGRAM
-    ESP_LOGW(TAG, "Telegram stub mode enabled; skipping Telegram startup");
-#else
-    esp_err_t telegram_init_err = telegram_init();  // Missing token is non-fatal
-    if (telegram_init_err != ESP_OK && telegram_init_err != ESP_ERR_NOT_FOUND) {
-        fail_fast_startup("telegram_init", telegram_init_err);
-    }
-#endif
-    tools_init();
-#if CONFIG_ZCLAW_T_DISPLAY
-    esp_err_t display_init_err = display_init();
-    if (display_init_err != ESP_OK) {
-        ESP_LOGW(TAG, "Display init failed: %s", esp_err_to_name(display_init_err));
+// 4. Check if configured or in safe mode
+if (!device_is_configured() || s_safe_mode) {
+    if (s_safe_mode) {
+        ESP_LOGE(TAG, "");
+        ESP_LOGE(TAG, "========================================");
+        ESP_LOGE(TAG, "  SAFE MODE - Too many boot failures");
+        ESP_LOGE(TAG, "  Hold BOOT button for factory reset");
+        ESP_LOGE(TAG, "========================================");
+        ESP_LOGE(TAG, "");
+        ESP_LOGE(TAG, "Recovery options:");
+        ESP_LOGE(TAG, "  1) Hold BOOT for factory reset");
+        ESP_LOGE(TAG, "  2) Reflash firmware and reprovision");
+        ESP_LOGE(TAG, "");
     } else {
-        display_start_task();
-        power_init();
-        display_set_message("zclaw ready");
+        print_provisioning_help();
     }
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
+}
 
-    // 12. Initialize USB serial channel
-    channel_init();
+// 5. Connect to WiFi
+if (!wifi_connect_sta()) {
+    ESP_LOGE(TAG, "WiFi failed, restarting...");
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    esp_restart();
+}
 
-    // 13. Create queues
-    QueueHandle_t input_queue = xQueueCreate(INPUT_QUEUE_LENGTH, sizeof(channel_msg_t));
-    QueueHandle_t channel_output_queue = xQueueCreate(OUTPUT_QUEUE_LENGTH, sizeof(channel_output_msg_t));
-    QueueHandle_t telegram_output_queue = NULL;
+// 6. Start task to clear boot counter after stable period
+if (xTaskCreate(clear_boot_count, "boot_ok", BOOT_OK_TASK_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
+    ESP_LOGE(TAG, "Failed to create boot confirmation task");
+}
+
+// 7. Initialize cron (includes NTP sync)
+ESP_ERROR_CHECK(cron_init());
+
+// 8. Initialize LLM client
+ESP_ERROR_CHECK(llm_init());
+
+// 9. Initialize rate limiter
+ratelimit_init();
+
+// 10. Initialize Telegram
 #if CONFIG_ZCLAW_STUB_TELEGRAM
-    bool telegram_enabled = false;
+ESP_LOGW(TAG, "Telegram stub mode enabled; skipping Telegram startup");
 #else
-    bool telegram_enabled = telegram_is_configured();
+esp_err_t telegram_init_err = telegram_init();  // Missing token is non-fatal
+if (telegram_init_err != ESP_OK && telegram_init_err != ESP_ERR_NOT_FOUND) {
+    fail_fast_startup("telegram_init", telegram_init_err);
+}
 #endif
-    if (telegram_enabled) {
-        telegram_output_queue = xQueueCreate(TELEGRAM_OUTPUT_QUEUE_LENGTH, sizeof(telegram_msg_t));
-    }
+tools_init();
+#if CONFIG_ZCLAW_T_DISPLAY
+esp_err_t display_init_err = display_init();
+if (display_init_err != ESP_OK) {
+    ESP_LOGW(TAG, "Display init failed: %s", esp_err_to_name(display_init_err));
+} else {
+    display_start_task();
+    power_init();
+    display_set_message("zclaw ready");
+}
 
-    if (!input_queue || !channel_output_queue || (telegram_enabled && !telegram_output_queue)) {
-        ESP_LOGE(TAG, "Failed to create queues");
-        esp_restart();
-    }
+// 12. Initialize USB serial channel
+channel_init();
 
-    // 14. Start channel task (USB serial)
-    esp_err_t startup_err = channel_start(input_queue, channel_output_queue);
+// 13. Create queues
+QueueHandle_t input_queue = xQueueCreate(INPUT_QUEUE_LENGTH, sizeof(channel_msg_t));
+QueueHandle_t channel_output_queue = xQueueCreate(OUTPUT_QUEUE_LENGTH, sizeof(channel_output_msg_t));
+QueueHandle_t telegram_output_queue = NULL;
+#if CONFIG_ZCLAW_STUB_TELEGRAM
+bool telegram_enabled = false;
+#else
+bool telegram_enabled = telegram_is_configured();
+#endif
+if (telegram_enabled) {
+    telegram_output_queue = xQueueCreate(TELEGRAM_OUTPUT_QUEUE_LENGTH, sizeof(telegram_msg_t));
+}
+
+if (!input_queue || !channel_output_queue || (telegram_enabled && !telegram_output_queue)) {
+    ESP_LOGE(TAG, "Failed to create queues");
+    esp_restart();
+}
+
+// 14. Start channel task (USB serial)
+esp_err_t startup_err = channel_start(input_queue, channel_output_queue);
+if (startup_err != ESP_OK) {
+    fail_fast_startup("channel_start", startup_err);
+}
+
+// 15. Start Telegram channel
+if (telegram_enabled) {
+    startup_err = telegram_start(input_queue, telegram_output_queue);
     if (startup_err != ESP_OK) {
-        fail_fast_startup("channel_start", startup_err);
+        fail_fast_startup("telegram_start", startup_err);
     }
+}
 
-    // 15. Start Telegram channel
-    if (telegram_enabled) {
-        startup_err = telegram_start(input_queue, telegram_output_queue);
-        if (startup_err != ESP_OK) {
-            fail_fast_startup("telegram_start", startup_err);
-        }
-    }
+// 16. Start agent task
+startup_err = agent_start(input_queue, channel_output_queue, telegram_output_queue);
+if (startup_err != ESP_OK) {
+    fail_fast_startup("agent_start", startup_err);
+}
 
-    // 16. Start agent task
-    startup_err = agent_start(input_queue, channel_output_queue, telegram_output_queue);
-    if (startup_err != ESP_OK) {
-        fail_fast_startup("agent_start", startup_err);
-    }
+// 17. Start cron task
+startup_err = cron_start(input_queue);
+if (startup_err != ESP_OK) {
+    fail_fast_startup("cron_start", startup_err);
+}
 
-    // 17. Start cron task
-    startup_err = cron_start(input_queue);
-    if (startup_err != ESP_OK) {
-        fail_fast_startup("cron_start", startup_err);
-    }
+// 18. Print ready message
+ESP_LOGI(TAG, "");
+ESP_LOGI(TAG, "========================================");
+ESP_LOGI(TAG, "  Ready! Free heap: %lu bytes", esp_get_free_heap_size());
+ESP_LOGI(TAG, "========================================");
+ESP_LOGI(TAG, "");
 
-    // 18. Print ready message
-    ESP_LOGI(TAG, "");
-    ESP_LOGI(TAG, "========================================");
-    ESP_LOGI(TAG, "  Ready! Free heap: %lu bytes", esp_get_free_heap_size());
-    ESP_LOGI(TAG, "========================================");
-    ESP_LOGI(TAG, "");
+// 19. Send startup notification on Telegram
+if (telegram_enabled && telegram_is_configured()) {
+    telegram_send_startup();
+}
 
-    // 19. Send startup notification on Telegram
-    if (telegram_enabled && telegram_is_configured()) {
-        telegram_send_startup();
-    }
-
-    // app_main returns - FreeRTOS scheduler continues running tasks
+// app_main returns - FreeRTOS scheduler continues running tasks
 #endif
 }
