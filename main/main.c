@@ -460,7 +460,7 @@ void app_main(void)
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-#else
+#endif
 
     // 4. Check if configured or in safe mode
     if (!device_is_configured() || s_safe_mode) {
