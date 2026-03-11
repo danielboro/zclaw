@@ -670,4 +670,3 @@ if (boot_guard_should_enter_safe_mode(boot_count, MAX_BOOT_FAILURES)) {
     // app_main returns - FreeRTOS scheduler continues running tasks
 }
 
-#endif
