@@ -427,6 +427,28 @@ void app_main(void)
         s_safe_mode = true;
     }
 
+    // Battery low deep sleep check
+    if (boot_count > 2 && !power_get_battery_percent()) {
+        ESP_LOGE(TAG, "");
+        ESP_LOGE(TAG, "========================================");
+        ESP_LOGE(TAG, "  battery low sleeping");
+        ESP_LOGE(TAG, "  connect to power");
+        ESP_LOGE(TAG, "========================================");
+        ESP_LOGE(TAG, "");
+        s_safe_mode = false;
+        boot_guard_set_persisted_count(2);
+        // Turn off backlight (TFT_BL_GPIO = 4)
+        gpio_reset_pin(4);
+        gpio_set_direction(4, GPIO_MODE_OUTPUT);
+        gpio_set_level(4, 0);
+#ifndef CONFIG_ZCLAW_STUB_TELEGRAM
+        if (telegram_is_configured()) {
+            telegram_send_message("battery at 0 powering down");
+        }
+#endif
+        esp_deep_sleep_start();
+    }
+
 #else
     ESP_LOGW(TAG, "Emulator mode enabled: skipping WiFi/NTP/Telegram startup");
 #ifndef CONFIG_ZCLAW_STUB_LLM
