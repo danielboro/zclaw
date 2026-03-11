@@ -30,6 +30,7 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
+#include "esp_sleep.h"
 #include <string.h>
 
 static const char *TAG = "main";
@@ -443,7 +444,7 @@ void app_main(void)
         gpio_set_level(4, 0);
 #ifndef CONFIG_ZCLAW_STUB_TELEGRAM
         if (telegram_is_configured()) {
-            telegram_send_message("battery at 0 powering down");
+            telegram_send("battery at 0 powering down");
         }
 #endif
         esp_deep_sleep_start();
