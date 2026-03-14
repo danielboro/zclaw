@@ -53,6 +53,11 @@ bool tools_display_battery_handler(const cJSON *input, char *result, size_t resu
 #endif // TOOLS_HANDLERS_H
 // Red tool
 bool tools_red_handler(const cJSON *input, char *result, size_t result_len);
+// Screen control tools
+bool tools_set_background_color_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_clear_screen_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_screen_on_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_screen_off_handler(const cJSON *input, char *result, size_t result_len);
 
 // Manual overlay API (for tools)
 void display_set_manual_text(int x, int y, const char *text, uint16_t color);

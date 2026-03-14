@@ -147,3 +147,23 @@ TOOL_ENTRY("red",
            "Displays the word 'red' in red color at position (5,5).",
            "{\"type\":\"object\",\"properties\":{}}",
            tools_red_handler)
+
+TOOL_ENTRY("set_background_color",
+           "Set the display background color (RGB565). This color will be used for subsequent clear_screen operations and as default background for text.",
+           "{\"type\":\"object\",\"properties\":{\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color value\"}},\"required\":[\"color\"]}",
+           tools_set_background_color_handler)
+
+TOOL_ENTRY("clear_screen",
+           "Clear the entire screen to the current background color (or optionally specify a color).",
+           "{\"type\":\"object\",\"properties\":{\"color\":{\"type\":\"integer\",\"description\":\"Optional RGB565 color to clear to (if omitted uses current background)\"}},\"required\":[]}",
+           tools_clear_screen_handler)
+
+TOOL_ENTRY("screen_on",
+           "Turn the T-Display backlight on (GPIO4 high).",
+           "{\"type\":\"object\",\"properties\":{}}",
+           tools_screen_on_handler)
+
+TOOL_ENTRY("screen_off",
+           "Turn the T-Display backlight off (GPIO4 low).",
+           "{\"type\":\"object\",\"properties\":{}}",
+           tools_screen_off_handler)

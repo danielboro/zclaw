@@ -312,3 +312,92 @@ bool tools_red_handler(const cJSON *input, char *result, size_t result_len)
     snprintf(result, result_len, "Displayed 'red' in red at (5,5)");
     return true;
 }
+
+
+
+// Screen control tool handlers
+bool tools_set_background_color_handler(const cJSON *input, char *result, size_t result_len)
+{
+    if (!input || !result) return false;
+    if (display_init() != ESP_OK) {
+        snprintf(result, result_len, "Display not available");
+        return false;
+    }
+    cJSON *color_json = cJSON_GetObjectItem(input, "color");
+    if (!cJSON_IsNumber(color_json)) {
+        snprintf(result, result_len, "Missing or invalid parameter: color (RGB565 integer)");
+        return false;
+    }
+    uint16_t color = (uint16_t)color_json->valueint;
+    uint16_t r5 = (color >> 11) & 0x1F;
+    uint16_t g6 = (color >> 5) & 0x3F;
+    uint16_t b5 = color & 0x1F;
+    uint8_t r = (r5 * 255 + 15) / 31;
+    uint8_t g = (g6 * 255 + 31) / 63;
+    uint8_t b = (b5 * 255 + 15) / 31;
+    bgRed = r;
+    bgGreen = g;
+    bgBlue = b;
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        clearScreen(r, g, b);
+        xSemaphoreGive(spi_mutex);
+    } else {
+        snprintf(result, result_len, "Set background color but failed to lock SPI for clear");
+        return false;
+    }
+    snprintf(result, result_len, "Background color set to 0x%04X and screen cleared", color);
+    return true;
+}
+
+bool tools_clear_screen_handler(const cJSON *input, char *result, size_t result_len)
+{
+    if (!input || !result) return false;
+    if (display_init() != ESP_OK) {
+        snprintf(result, result_len, "Display not available");
+        return false;
+    }
+    cJSON *color_json = cJSON_GetObjectItem(input, "color");
+    uint16_t r = bgRed, g = bgGreen, b = bgBlue;
+    if (cJSON_IsNumber(color_json)) {
+        uint16_t color = (uint16_t)color_json->valueint;
+        uint16_t r5 = (color >> 11) & 0x1F;
+        uint16_t g6 = (color >> 5) & 0x3F;
+        uint16_t b5 = color & 0x1F;
+        r = (r5 * 255 + 15) / 31;
+        g = (g6 * 255 + 31) / 63;
+        b = (b5 * 255 + 15) / 31;
+    }
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        clearScreen(r, g, b);
+        xSemaphoreGive(spi_mutex);
+    } else {
+        snprintf(result, result_len, "Clear screen failed: timeout taking spi_mutex");
+        return false;
+    }
+    snprintf(result, result_len, "Screen cleared");
+    return true;
+}
+
+bool tools_screen_on_handler(const cJSON *input, char *result, size_t result_len)
+{
+    if (!input || !result) return false;
+    if (display_init() != ESP_OK) {
+        snprintf(result, result_len, "Display not available");
+        return false;
+    }
+    display_backlight(true);
+    snprintf(result, result_len, "Screen backlight turned ON (GPIO4 high)");
+    return true;
+}
+
+bool tools_screen_off_handler(const cJSON *input, char *result, size_t result_len)
+{
+    if (!input || !result) return false;
+    if (display_init() != ESP_OK) {
+        snprintf(result, result_len, "Display not available");
+        return false;
+    }
+    display_backlight(false);
+    snprintf(result, result_len, "Screen backlight turned OFF (GPIO4 low)");
+    return true;
+}
