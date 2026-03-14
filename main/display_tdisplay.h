@@ -22,6 +22,7 @@ void display_clear_manual(void);
 esp_err_t display_set_message(const char *msg);
 void display_set_button_enabled(bool enable);
 void display_start_task(void);
+void display_show_test(void);
 
 #ifdef __cplusplus
 }

@@ -10,6 +10,7 @@
 #include "driver/gpio.h"
 #include "power_tdisplay.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -23,7 +24,12 @@ static const char *TAG = "display_tdisplay";
 #define TFT_CS_GPIO 5
 #define TFT_DC_GPIO 16
 #define TFT_BL_GPIO 4
+#define TFT_RST_GPIO 23
 #define BUTTON_GPIO 0
+#define TFT_H_RES 135
+#define TFT_V_RES 240
+#define TFT_SPI_HOST SPI2_HOST
+#define DRAW_BUF_LINES 20
 
 // SPI
 static spi_device_handle_t tft_spi = NULL;
@@ -254,6 +260,9 @@ esp_err_t display_init(void)
     display_backlight(true);
     backlight_state = true;
 
+    // Mark display as initialized after successful setup
+    s_display_initialized = true;
+
     ESP_LOGI(TAG, "Display initialized");
     return ESP_OK;
 }
@@ -377,6 +386,16 @@ void display_start_task(void)
 }
 
 #endif // CONFIG_ZCLAW_T_DISPLAY
+
+void display_show_test(void)
+{
+    if (display_init() != ESP_OK) {
+        return;
+    }
+    display_backlight(true);
+    display_clear();
+    display_text(5, 5, "TEST", 0xF800);
+}
 
 // Display tool handlers
 bool tools_display_text_handler(const cJSON *input, char *result, size_t result_len) {

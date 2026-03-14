@@ -143,7 +143,7 @@ if [ -n "$BOARD_PRESET" ]; then
     echo "Board preset: $BOARD_PRESET"
 fi
 
-build_cmd=(idf.py)
+build_cmd=(idf.py clean)
 if [ -n "$IDF_TARGET_OVERRIDE" ]; then
     build_cmd+=(-D "IDF_TARGET=$IDF_TARGET_OVERRIDE")
 fi

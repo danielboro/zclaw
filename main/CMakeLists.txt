@@ -37,6 +37,7 @@ idf_component_register(
         "font8x8.c"
         "power_tdisplay.c"
         "test_screen.c"
+        "ttgo.c"
     INCLUDE_DIRS "."
     REQUIRES
         nvs_flash
