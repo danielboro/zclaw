@@ -52,7 +52,6 @@ static SemaphoreHandle_t spi_mutex;
 #define SPI_BUF_SIZE 1024
 static uint8_t spi_tx_buf[SPI_BUF_SIZE];
 
-static void tft_write_cmd(const uint8_t cmd)
 {
     spi_transaction_t t = {0};
     t.length = 8;
@@ -79,7 +78,6 @@ static void tft_write_data(const uint8_t *data, size_t len)
     }
 }
 
-static void tft_write_data_byte(uint8_t data)
 {
     tft_write_data(&data, 1);
 }
@@ -98,7 +96,6 @@ static void tft_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
     tft_write_cmd(CMD_RAMWR);
 }
 
-static void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {
     if (w == 0 || h == 0) return;
     tft_set_window(x, y, x + w - 1, y + h - 1);
@@ -117,7 +114,6 @@ static void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16
     if (pos > 0) tft_write_data(spi_tx_buf, pos);
 }
 
-static void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t fg, uint16_t bg)
 {
     if (c < 32 || c > 126) c = '?';
     int idx = c - 32;
@@ -134,7 +130,6 @@ static void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t fg, uint16_t 
     }
 }
 
-static void tft_draw_string(uint16_t x, uint16_t y, const char *str, uint16_t fg, uint16_t bg)
 {
     int cursor_x = x;
     for (int i = 0; str[i]; i++) {
@@ -273,10 +268,10 @@ void display_clear(void)
 }
 
 void display_text(int x, int y, const char *text, uint16_t color) {
+
     if (x < 0) x = 0;
     if (y < 0) y = 0;
     uint8_t r,g,b;
-    // Convert RGB565 to RGB
     uint16_t r5 = (color >> 11) & 0x1F;
     uint16_t g6 = (color >> 5) & 0x3F;
     uint16_t b5 = color & 0x1F;
@@ -284,15 +279,16 @@ void display_text(int x, int y, const char *text, uint16_t color) {
     g = (g6 * 255 + 31) / 63;
     b = (b5 * 255 + 15) / 31;
     if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-        bgRed = 0; bgGreen = 0; bgBlue = 0; // set background black
+        bgRed = 0; bgGreen = 0; bgBlue = 0;
         displayStr((char*)text, x, y, r, g, b, 32);
         xSemaphoreGive(spi_mutex);
     } else {
         ESP_LOGW(TAG, "display_text: timeout taking spi_mutex");
     }
-}
+
 
 void display_battery(int x, int y, uint8_t percent, bool charging) {
+
     if (percent > 100) percent = 100;
     uint16_t bat_w = 20, bat_h = 8;
     uint8_t r,g,b;
@@ -324,11 +320,11 @@ void display_battery(int x, int y, uint8_t percent, bool charging) {
         ESP_LOGW(TAG, "display_battery: timeout taking spi_mutex");
     }
 
-    // percentage text (use display_text which takes mutex)
+    // percentage text
     char pct_str[5];
     snprintf(pct_str, sizeof(pct_str), "%d%%", percent);
     display_text(x+bat_w+2, y, pct_str, 0xFFFF);
-}
+
     if (charging) {
         tft_fill_rect(x+bat_w-2, y+1, 1, 3, 0xFFFF);
         tft_fill_rect(x+bat_w-4, y+2, 3, 1, 0xFFFF);
@@ -381,6 +377,7 @@ static void display_task(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(500));
     while (1) {
         #include "power_tdisplay.h"
+extern uint8_t bgRed, bgGreen, bgBlue;
         uint8_t pct = power_get_battery_percent();
         bool charging = usb_is_powered();
 
