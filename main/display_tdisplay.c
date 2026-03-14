@@ -399,6 +399,15 @@ void display_show_test(void)
 
 // Display tool handlers
 bool tools_display_text_handler(const cJSON *input, char *result, size_t result_len) {
+    // Ensure display is initialized
+    if (!display_is_initialized()) {
+        esp_err_t _init_err = display_init();
+        if (_init_err != ESP_OK) {
+            snprintf(result, result_len, "display_init failed: %s", esp_err_to_name(_init_err));
+            return false;
+        }
+    }
+
     cJSON *jx = cJSON_GetObjectItem(input, "x");
     cJSON *jy = cJSON_GetObjectItem(input, "y");
     cJSON *jt = cJSON_GetObjectItem(input, "text");
@@ -419,6 +428,15 @@ bool tools_display_text_handler(const cJSON *input, char *result, size_t result_
 }
 
 bool tools_display_battery_handler(const cJSON *input, char *result, size_t result_len) {
+    // Ensure display is initialized
+    if (!display_is_initialized()) {
+        esp_err_t _init_err = display_init();
+        if (_init_err != ESP_OK) {
+            snprintf(result, result_len, "display_init failed: %s", esp_err_to_name(_init_err));
+            return false;
+        }
+    }
+
     cJSON *jx = cJSON_GetObjectItem(input, "x");
     cJSON *jy = cJSON_GetObjectItem(input, "y");
     cJSON *jp = cJSON_GetObjectItem(input, "percent");
@@ -441,6 +459,15 @@ bool tools_display_battery_handler(const cJSON *input, char *result, size_t resu
 
 // Tool: red (convenience tool)
 bool tools_red_handler(const cJSON *input, char *result, size_t result_len) {
+    // Ensure display is initialized
+    if (!display_is_initialized()) {
+        esp_err_t _init_err = display_init();
+        if (_init_err != ESP_OK) {
+            snprintf(result, result_len, "display_init failed: %s", esp_err_to_name(_init_err));
+            return false;
+        }
+    }
+
     (void)input;
     display_set_manual_text(5, 5, "red", 0xF800);
     snprintf(result, result_len, "Set red overlay at (5,5) in color 0xF800");
