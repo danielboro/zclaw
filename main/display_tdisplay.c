@@ -2,6 +2,7 @@
 #include <stdio.h>
 #ifdef CONFIG_ZCLAW_T_DISPLAY
 
+extern uint8_t bgRed, bgGreen, bgBlue;
 #include "display_tdisplay.h"
 #include "cJSON.h"
 #include "ttgo.h"
@@ -52,8 +53,7 @@ static SemaphoreHandle_t spi_mutex;
 #define SPI_BUF_SIZE 1024
 static uint8_t spi_tx_buf[SPI_BUF_SIZE];
 
-{
-    spi_transaction_t t = {0};
+;
     t.length = 8;
     t.tx_buffer = &cmd;
     gpio_set_level(TFT_DC_GPIO, 0);
@@ -78,6 +78,7 @@ static void tft_write_data(const uint8_t *data, size_t len)
     }
 }
 
+static void tft_write_data_byte(uint8_t data)
 {
     tft_write_data(&data, 1);
 }
@@ -96,47 +97,20 @@ static void tft_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
     tft_write_cmd(CMD_RAMWR);
 }
 
-{
-    if (w == 0 || h == 0) return;
-    tft_set_window(x, y, x + w - 1, y + h - 1);
-    uint32_t total = (uint32_t)w * (uint32_t)h;
-    spi_tx_buf[0] = (color >> 8) & 0xFF;
-    spi_tx_buf[1] = color & 0xFF;
-    size_t pos = 0;
-    for (uint32_t i = 0; i < total; i++) {
-        if (pos >= SPI_BUF_SIZE - 2) {
-            tft_write_data(spi_tx_buf, pos);
-            pos = 0;
-        }
+
         spi_tx_buf[pos++] = spi_tx_buf[0];
         spi_tx_buf[pos++] = spi_tx_buf[1];
     }
     if (pos > 0) tft_write_data(spi_tx_buf, pos);
 }
 
-{
-    if (c < 32 || c > 126) c = '?';
-    int idx = c - 32;
-    const uint8_t *font_row = font8x8[idx];
-    for (int row = 0; row < 8; row++) {
-        uint8_t bits = font_row[row];
-        for (int col = 0; col < 8; col++) {
-            uint16_t color = (bits & (1 << col)) ? fg : bg;
-            spi_tx_buf[col*2] = (color >> 8) & 0xFF;
-            spi_tx_buf[col*2+1] = color & 0xFF;
-        }
+
         tft_set_window(x, y + row, x + 7, y + row);
         tft_write_data(spi_tx_buf, 16);
     }
 }
 
-{
-    int cursor_x = x;
-    for (int i = 0; str[i]; i++) {
-        tft_draw_char(cursor_x, y, str[i], fg, bg);
-        cursor_x += 8;
-        if (cursor_x >= 240) break;
-    }
+
 }
 
 // --- Button backlight toggle state ---
@@ -145,14 +119,7 @@ static volatile bool backlight_state = true;
 static volatile TickType_t last_toggle_tick = 0;
 static const TickType_t DEBOUNCE_MS = pdMS_TO_TICKS(50);
 
-static void IRAM_ATTR button_isr_handler(void* arg)
-{
-    TickType_t now = xTaskGetTickCountFromISR();
-    if ((now - last_toggle_tick) >= DEBOUNCE_MS) {
-        if (button_enabled) {
-            backlight_state = !backlight_state;
-            gpio_set_level(TFT_BL_GPIO, backlight_state ? 1 : 0);
-        }
+
         last_toggle_tick = now;
     }
 }
@@ -268,10 +235,9 @@ void display_clear(void)
 }
 
 void display_text(int x, int y, const char *text, uint16_t color) {
-
     if (x < 0) x = 0;
     if (y < 0) y = 0;
-    uint8_t r,g,b;
+    uint8_t r, g, b;
     uint16_t r5 = (color >> 11) & 0x1F;
     uint16_t g6 = (color >> 5) & 0x3F;
     uint16_t b5 = color & 0x1F;
@@ -285,13 +251,12 @@ void display_text(int x, int y, const char *text, uint16_t color) {
     } else {
         ESP_LOGW(TAG, "display_text: timeout taking spi_mutex");
     }
-
+}
 
 void display_battery(int x, int y, uint8_t percent, bool charging) {
-
     if (percent > 100) percent = 100;
     uint16_t bat_w = 20, bat_h = 8;
-    uint8_t r,g,b;
+    uint8_t r, g, b;
     uint16_t fill_color = (percent < 20) ? 0xF800 : (percent < 50 ? 0xFFE0 : 0x07E0);
     uint16_t r5 = (fill_color >> 11) & 0x1F;
     uint16_t g6 = (fill_color >> 5) & 0x3F;
@@ -302,18 +267,18 @@ void display_battery(int x, int y, uint8_t percent, bool charging) {
 
     if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         // border (white)
-        fillBox(x, y, bat_w, bat_h, 255,255,255);
+        fillBox(x, y, bat_w, bat_h, 255, 255, 255);
         // inner background (black)
-        fillBox(x+1, y+1, bat_w-2, bat_h-2, 0,0,0);
+        fillBox(x+1, y+1, bat_w-2, bat_h-2, 0, 0, 0);
         // fill
         uint16_t fill_w = (bat_w-4) * percent / 100;
         if (fill_w > 0) {
-            fillBox(x+2, y+2, fill_w, bat_h-4, r,g,b);
+            fillBox(x+2, y+2, fill_w, bat_h-4, r, g, b);
         }
         // charging indicator
         if (charging) {
-            fillBox(x+bat_w-2, y+1, 1, 3, 255,255,255);
-            fillBox(x+bat_w-4, y+2, 3, 1, 255,255,255);
+            fillBox(x+bat_w-2, y+1, 1, 3, 255, 255, 255);
+            fillBox(x+bat_w-4, y+2, 3, 1, 255, 255, 255);
         }
         xSemaphoreGive(spi_mutex);
     } else {
@@ -324,7 +289,7 @@ void display_battery(int x, int y, uint8_t percent, bool charging) {
     char pct_str[5];
     snprintf(pct_str, sizeof(pct_str), "%d%%", percent);
     display_text(x+bat_w+2, y, pct_str, 0xFFFF);
-
+}
     if (charging) {
         tft_fill_rect(x+bat_w-2, y+1, 1, 3, 0xFFFF);
         tft_fill_rect(x+bat_w-4, y+2, 3, 1, 0xFFFF);
@@ -377,7 +342,6 @@ static void display_task(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(500));
     while (1) {
         #include "power_tdisplay.h"
-extern uint8_t bgRed, bgGreen, bgBlue;
         uint8_t pct = power_get_battery_percent();
         bool charging = usb_is_powered();
 
