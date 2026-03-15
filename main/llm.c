@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "cJSON.h"
 #include <stdint.h>
 
 static const char *TAG = "llm";
@@ -31,6 +32,8 @@ static llm_backend_t s_backend = LLM_BACKEND_OPENAI;
 static char s_api_key[LLM_API_KEY_BUF_SIZE] = {0};
 static char s_model[64] = {0};
 static char s_api_url_override[192] = {0};
+static char s_fallback_url[192] = {0};
+static char s_fallback_model[64] = {0};
 
 static bool llm_backend_requires_api_key(llm_backend_t backend)
 {
@@ -494,6 +497,17 @@ esp_err_t llm_init(void)
 
     s_api_url_override[0] = '\0';
     memory_get(NVS_KEY_LLM_API_URL, s_api_url_override, sizeof(s_api_url_override));
+    // Load fallback configuration from NVS, with Kconfig defaults as fallback
+    memory_get(NVS_KEY_LLM_FALLBACK_URL, s_fallback_url, sizeof(s_fallback_url));
+    if (s_fallback_url[0] == '\0') {
+        strncpy(s_fallback_url, CONFIG_ZCLAW_LLM_FALLBACK_URL, sizeof(s_fallback_url) - 1);
+        s_fallback_url[sizeof(s_fallback_url) - 1] = '\0';
+    }
+    memory_get(NVS_KEY_LLM_FALLBACK_MODEL, s_fallback_model, sizeof(s_fallback_model));
+    if (s_fallback_model[0] == '\0') {
+        strncpy(s_fallback_model, CONFIG_ZCLAW_LLM_FALLBACK_MODEL, sizeof(s_fallback_model) - 1);
+        s_fallback_model[sizeof(s_fallback_model) - 1] = '\0';
+    }
 
     ESP_LOGI(TAG, "Backend: %s, Model: %s", llm_backend_name(s_backend), s_model);
     if (s_api_url_override[0] != '\0') {
@@ -773,7 +787,7 @@ esp_err_t llm_request(const char *request_json, char *response_buf, size_t respo
         memset(ctx.buf, 0, ctx.max);
 
         // Create fallback client with local Ollama URL
-        const char *fallback_url = CONFIG_ZCLAW_LLM_FALLBACK_URL;
+        const char *fallback_url = s_fallback_url[0] ? s_fallback_url : CONFIG_ZCLAW_LLM_FALLBACK_URL;
         esp_http_client_config_t fallback_config = {
             .url = fallback_url,
             .event_handler = http_event_handler,
@@ -803,7 +817,7 @@ esp_err_t llm_request(const char *request_json, char *response_buf, size_t respo
             if (!llm_build_bearer_auth_header(s_api_key, auth_header, sizeof(auth_header))) {
                 ESP_LOGE(TAG, "API key length exceeds auth header capacity for fallback");
                 esp_http_client_cleanup(fallback_client);
-                http_gate_release();
+                if (fallback_request_json != request_json) {                    free((void*)fallback_request_json);                }                http_gate_release();
                 return ESP_ERR_INVALID_SIZE;
             }
             esp_http_client_set_header(fallback_client, "Authorization", auth_header);
@@ -815,7 +829,25 @@ esp_err_t llm_request(const char *request_json, char *response_buf, size_t respo
         }
 
         // Set request body
-        esp_http_client_set_post_field(fallback_client, request_json, strlen(request_json));
+        // Override model if fallback_model is set
+        const char *fallback_request_json = request_json;
+        if (s_fallback_model[0] != '\0') {
+            cJSON *root = cJSON_Parse(request_json);
+            if (root) {
+                cJSON *model_node = cJSON_GetObjectItem(root, "model");
+                if (model_node) {
+                    cJSON_ReplaceItemInObject(root, "model", cJSON_CreateString(s_fallback_model));
+                } else {
+                    cJSON_AddStringToObject(root, "model", s_fallback_model);
+                }
+                char *new_json = cJSON_PrintUnformatted(root);
+                if (new_json) {
+                    fallback_request_json = new_json;
+                }
+                cJSON_Delete(root);
+            }
+        }
+        esp_http_client_set_post_field(fallback_client, fallback_request_json, strlen(fallback_request_json));
 
         ESP_LOGI(TAG, "Attempting fallback LLM request to %s", fallback_url);
         esp_err_t fallback_err = esp_http_client_perform(fallback_client);
@@ -827,7 +859,7 @@ esp_err_t llm_request(const char *request_json, char *response_buf, size_t respo
             if (fallback_status == 200 && !ctx.truncated) {
                 ESP_LOGI(TAG, "Fallback LLM request succeeded");
                 esp_http_client_cleanup(fallback_client);
-                http_gate_release();
+                if (fallback_request_json != request_json) {                    free((void*)fallback_request_json);                }                http_gate_release();
                 return ESP_OK;
             } else {
                 ESP_LOGE(TAG, "Fallback LLM request failed: status=%d, truncated=%d", fallback_status, ctx.truncated);
@@ -838,7 +870,7 @@ esp_err_t llm_request(const char *request_json, char *response_buf, size_t respo
         }
 
         esp_http_client_cleanup(fallback_client);
-        http_gate_release();
+        if (fallback_request_json != request_json) {            free((void*)fallback_request_json);        }        http_gate_release();
         return fallback_err;
     }
     #endif

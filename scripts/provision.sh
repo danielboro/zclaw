@@ -12,6 +12,8 @@ BACKEND=""
 MODEL=""
 API_KEY=""
 API_URL=""
+FALLBACK_URL=""
+FALLBACK_MODEL=""
 TG_TOKEN=""
 TG_CHAT_IDS=""
 ASSUME_YES=false
@@ -33,6 +35,8 @@ Options:
   --model <model-id>        Model ID (defaults by backend)
   --api-key <key>           LLM API key (required for anthropic/openai/openrouter)
   --api-url <url>           Optional custom API endpoint URL
+  --fallback-url <url>         Fallback LLM URL (default: from sdkconfig)
+  --fallback-model <model>     Fallback model name (default: from sdkconfig)
   --tg-token <token>        Telegram bot token (optional)
   --tg-chat-id <id[,id...]> Telegram chat ID allowlist (optional)
   --tg-chat-ids <list>      Alias of --tg-chat-id
@@ -1175,6 +1179,22 @@ if [ -n "$TG_TOKEN" ] && [ -z "$TG_CHAT_IDS" ]; then
     echo "Warning: Telegram token set without chat ID allowlist; incoming messages will be ignored."
 fi
 
+
+# Handle fallback URL and model
+if [ -z "$FALLBACK_URL" ] && [ "$ASSUME_YES" != true ]; then
+    read -r -p "Fallback LLM URL (default: ${CONFIG_ZCLAW_LLM_FALLBACK_URL:-http://localhost:11434/v1}): " FALLBACK_URL_INPUT
+    FALLBACK_URL="${FALLBACK_URL_INPUT:-${CONFIG_ZCLAW_LLM_FALLBACK_URL:-http://localhost:11434/v1}}"
+else
+    FALLBACK_URL="${FALLBACK_URL:-${CONFIG_ZCLAW_LLM_FALLBACK_URL:-http://localhost:11434/v1}}"
+fi
+
+if [ -z "$FALLBACK_MODEL" ] && [ "$ASSUME_YES" != true ]; then
+    read -r -p "Fallback model name (default: ${CONFIG_ZCLAW_LLM_FALLBACK_MODEL:-llama2}): " FALLBACK_MODEL_INPUT
+    FALLBACK_MODEL="${FALLBACK_MODEL_INPUT:-${CONFIG_ZCLAW_LLM_FALLBACK_MODEL:-llama2}}"
+else
+    FALLBACK_MODEL="${FALLBACK_MODEL:-${CONFIG_ZCLAW_LLM_FALLBACK_MODEL:-llama2}}"
+fi
+
 NVS_GEN="$IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py"
 PARTTOOL="$IDF_PATH/components/partition_table/parttool.py"
 
@@ -1202,6 +1222,14 @@ trap 'rm -rf "$tmpdir"' EXIT
     printf "llm_model,data,string,%s\n" "$(csv_escape "$MODEL")"
     if [ -n "$API_URL" ]; then
         printf "llm_api_url,data,string,%s\n" "$(csv_escape "$API_URL")"
+    if [ -n "$FALLBACK_URL" ]; then
+        printf "llm_fallback_url,data,string,%s
+" "$(csv_escape "$FALLBACK_URL")"
+    fi
+    if [ -n "$FALLBACK_MODEL" ]; then
+        printf "llm_fallback_model,data,string,%s
+" "$(csv_escape "$FALLBACK_MODEL")"
+    fi
     fi
 
     if [ -n "$TG_TOKEN" ]; then
@@ -1232,6 +1260,11 @@ echo "  WiFi SSID: $WIFI_SSID"
 echo "  WiFi password: ${WIFI_PASS:-<empty>}"
 echo "  Backend:   $BACKEND"
 echo "  Model:     $MODEL"
+    if [ -n "$API_URL" ]; then
+        echo "  API URL:   $API_URL"
+    fi
+    echo "  Fallback URL: $FALLBACK_URL"
+    echo "  Fallback Model: $FALLBACK_MODEL"
 if [ -n "$API_URL" ]; then
     echo "  API URL:   $API_URL"
 fi
