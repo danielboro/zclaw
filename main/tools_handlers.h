@@ -64,3 +64,11 @@ void display_set_manual_text(int x, int y, const char *text, uint16_t color);
 void display_clear_manual(void);
 
 bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_len);
+
+// Sleep tools
+bool tools_sleep_timer_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_sleep_gpio_handler(const cJSON *input, char *result, size_t result_len);
+
+// Loop tool
+bool tools_loop_handler(const cJSON *input, char *result, size_t result_len);
+
