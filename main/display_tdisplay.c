@@ -401,3 +401,77 @@ bool tools_screen_off_handler(const cJSON *input, char *result, size_t result_le
     snprintf(result, result_len, "Screen backlight turned OFF (GPIO4 low)");
     return true;
 }
+
+
+
+// Enhanced screen test tool: draws a comprehensive test pattern while preserving boot UI
+bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_len)
+{
+    if (!input || !result) return false;
+    if (display_init() != ESP_OK) {
+        snprintf(result, result_len, "Display not available");
+        return false;
+    }
+
+    // Ensure manual overlay task is running
+    display_start_task();
+
+    // Turn on backlight if it was off
+    bool was_backlight_on = backlight_state;
+    if (!was_backlight_on) {
+        display_backlight(true);
+    }
+
+    // Set background to dark blue (RGB565 = 0x001D? Actually 0x001D is blue? Let's compute: R=0, G=0x19, B=0x1F -> 0x001F? Use nice dark blue: R=0x00, G=0x00, B=0x1F -> RGB565 = 0x001F)
+    // But our set_background_color expects RGB565. We'll set bg globals and clear manually.
+    bgRed = 0; bgGreen = 0; bgBlue = 31; // dark blue
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        clearScreen(0, 0, 31);
+        xSemaphoreGive(spi_mutex);
+    }
+
+    // Draw test pattern using the normal display_text/battery API, all on manual overlay so boot message remains underneath
+    // Title
+    display_set_manual_text(5, 5, "T-Display Test", 0xFFFF); // white
+
+    // Color bar samples
+    uint16_t colors[] = {0xF800, 0x07E0, 0x001F, 0xFFE0, 0xF81F, 0x07FF, 0xFFFF};
+    const char *color_names[] = {"Red", "Green", "Blue", "Yellow", "Magenta", "Cyan", "White"};
+    int y = 20;
+    for (int i = 0; i < 7; i++) {
+        uint16_t c = colors[i];
+        uint8_t r5 = (c >> 11) & 0x1F;
+        uint8_t g6 = (c >> 5) & 0x3F;
+        uint8_t b5 = c & 0x1F;
+        uint8_t r = (r5 * 255 + 15) / 31;
+        uint8_t g = (g6 * 255 + 31) / 63;
+        uint8_t b = (b5 * 255 + 15) / 31;
+        if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            fillBox(5 + i*16, y, 14, 10, r, g, b);
+            xSemaphoreGive(spi_mutex);
+        }
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%s", color_names[i]);
+        display_set_manual_text(5 + i*16, y+12, buf, 0xFFFF);
+    }
+
+    // Battery samples at various levels
+    display_set_manual_text(5, 45, "Battery test:", 0xFFFF);
+    display_battery(5, 55, 100, false); // 100%
+    display_battery(30, 55, 50, false);  // 50%
+    display_battery(55, 55, 20, true);   // 20% charging
+    display_battery(80, 55, 5, false);   // 5% low
+
+    // Text rendering test
+    display_set_manual_text(5, 75, "The quick brown fox", 0x07E0); // green
+    display_set_manual_text(5, 87, "jumps over 13 lazy dogs.", 0xF800); // red
+    display_set_manual_text(5, 99, "1234567890", 0xFFFF); // white
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    // Clear only manual overlay, leave boot UI and backlight as-is
+    display_clear_manual();
+
+    snprintf(result, result_len, "Screen test completed");
+    return true;
+}
