@@ -790,6 +790,7 @@ static void process_message(const char *user_message, int64_t reply_chat_id)
         free(request);
 
         if (err != ESP_OK) {
+            s_fallback_llm = !s_fallback_llm; llm_init();
             ESP_LOGE(TAG, "LLM request failed after %d retries", LLM_MAX_RETRIES);
             history_rollback_to(history_turn_start, "llm request failed");
             send_response("Error: Failed to contact LLM API after retries", reply_chat_id);

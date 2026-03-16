@@ -38,4 +38,6 @@ bool llm_is_openai_format(void);
 bool llm_stub_has_api_key_for_test(void);
 #endif
 
+
+extern bool s_fallback_llm;
 #endif // LLM_H

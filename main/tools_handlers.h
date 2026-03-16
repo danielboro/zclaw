@@ -1,3 +1,6 @@
+#include "esp_err.h"
+#include "esp_err.h"
+#include "esp_err.h"
 #ifndef TOOLS_HANDLERS_H
 #define TOOLS_HANDLERS_H
 
@@ -72,3 +75,5 @@ bool tools_sleep_gpio_handler(const cJSON *input, char *result, size_t result_le
 // Loop tool
 bool tools_loop_handler(const cJSON *input, char *result, size_t result_len);
 
+
+esp_err_t tools_switch_llm_handler(cJSON *args, cJSON *response, void *user_data);
