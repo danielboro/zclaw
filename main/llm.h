@@ -4,6 +4,9 @@
 #include "config.h"
 #include "esp_err.h"
 #include <stdbool.h>
+extern bool s_fallback_llm;
+extern char s_fallback_url[192];
+extern char s_fallback_model[64];
 
 // Initialize the LLM HTTP client
 esp_err_t llm_init(void);
@@ -39,5 +42,4 @@ bool llm_stub_has_api_key_for_test(void);
 #endif
 
 
-extern bool s_fallback_llm;
 #endif // LLM_H

@@ -28,9 +28,9 @@ static const char *TAG = "llm";
 
 // Current backend configuration (loaded from NVS)
 static llm_backend_t s_backend = LLM_BACKEND_OPENAI;
-static bool s_fallback_llm = false;
-static char s_fallback_url[192] = {0};
-static char s_fallback_model[64] = {0};
+bool s_fallback_llm = false;
+char s_fallback_url[192] = {0};
+char s_fallback_model[64] = {0};
 static char s_api_key[LLM_API_KEY_BUF_SIZE] = {0};
 static char s_model[64] = {0};
 static char s_api_url_override[192] = {0};
