@@ -1,5 +1,6 @@
 
 #include "tools_handlers.h"
+#include "llm.h"
 #include "esp_sleep.h"
 #include "driver/gpio.h"
 #include "esp_log.h"

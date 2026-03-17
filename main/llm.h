@@ -7,7 +7,7 @@
 extern bool s_fallback_llm;
 extern char s_fallback_url[192];
 extern char s_fallback_model[64];
-extern char s_fallback_backend_str[16];
+extern char s_fallback_backend_str[32];
 extern char s_fallback_api_key[LLM_API_KEY_BUF_SIZE];
 
 // Initialize the LLM HTTP client
