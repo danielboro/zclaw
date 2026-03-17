@@ -498,6 +498,20 @@ esp_err_t llm_init(void)
     s_api_url_override[0] = '\0';
     memory_get(NVS_KEY_LLM_API_URL, s_api_url_override, sizeof(s_api_url_override));
 
+    // Load fallback variables from NVS
+    s_fallback_backend_str[0] = '\0';
+    memory_get(NVS_KEY_LLM_FALLBACK_BACKEND, s_fallback_backend_str, sizeof(s_fallback_backend_str));
+    s_fallback_model[0] = '\0';
+    memory_get(NVS_KEY_LLM_FALLBACK_MODEL, s_fallback_model, sizeof(s_fallback_model));
+    s_fallback_api_key[0] = '\0';
+    memory_get(NVS_KEY_LLM_FALLBACK_API_KEY, s_fallback_api_key, sizeof(s_fallback_api_key));
+    s_fallback_url[0] = '\0';
+    memory_get(NVS_KEY_LLM_FALLBACK_URL, s_fallback_url, sizeof(s_fallback_url));
+    // Log fallback configuration
+    if (s_fallback_backend_str[0] != '\0' || s_fallback_model[0] != '\0' || s_fallback_api_key[0] != '\0' || s_fallback_url[0] != '\0') {
+        ESP_LOGI(TAG, "Fallback LLM configured: backend=%s, model=%s, url=%s", s_fallback_backend_str, s_fallback_model, s_fallback_url);
+    }
+
     ESP_LOGI(TAG, "Backend: %s, Model: %s", llm_backend_name(s_backend), s_model);
     if (s_api_url_override[0] != '\0') {
         ESP_LOGI(TAG, "Using custom LLM API endpoint override");
@@ -526,10 +540,45 @@ bool llm_is_stub_mode(void)
 
 llm_backend_t llm_get_backend(void)
 {
+    if (s_fallback_llm && s_fallback_backend_str[0] != '\0') {
+        // Convert string to enum
+        if (strcmp(s_fallback_backend_str, "anthropic") == 0)
+            return LLM_BACKEND_ANTHROPIC;
+        if (strcmp(s_fallback_backend_str, "openai") == 0)
+            return LLM_BACKEND_OPENAI;
+        if (strcmp(s_fallback_backend_str, "openrouter") == 0)
+            return LLM_BACKEND_OPENROUTER;
+        if (strcmp(s_fallback_backend_str, "ollama") == 0)
+            return LLM_BACKEND_OLLAMA;
+    }
     return s_backend;
 }
 
 const char *llm_get_api_url(void)
+{
+    // If we are in fallback mode and a fallback URL is set, use it.
+    if (s_fallback_llm && s_fallback_url[0] != '\0') {
+        return s_fallback_url;
+    }
+
+    // Otherwise, if there's an override for the primary, use it.
+    if (s_api_url_override[0] != '\0') {
+        return s_api_url_override;
+    }
+
+    // Otherwise, return the default URL for the current backend (which might be primary or fallback).
+    llm_backend_t current_backend = llm_get_backend();
+    switch (current_backend) {
+        case LLM_BACKEND_OPENAI:
+            return LLM_API_URL_OPENAI;
+        case LLM_BACKEND_OPENROUTER:
+            return LLM_API_URL_OPENROUTER;
+        case LLM_BACKEND_OLLAMA:
+            return LLM_API_URL_OLLAMA;
+        default:
+            return LLM_API_URL_ANTHROPIC;
+    }
+}
 {
     if (s_api_url_override[0] != '\0') {
         return s_api_url_override;
@@ -563,8 +612,19 @@ const char *llm_get_default_model(void)
 
 const char *llm_get_model(void)
 {
+    if (s_fallback_llm && s_fallback_model[0] != '\0') {
+        return s_fallback_model;
+    }
     return s_model;
 }
+
+const char *llm_get_api_key(void)
+{
+    if (s_fallback_llm && s_fallback_api_key[0] != '\0')
+        return s_fallback_api_key;
+    return s_api_key;
+}
+
 
 #if CONFIG_ZCLAW_STUB_LLM
 bool llm_stub_has_api_key_for_test(void)
@@ -622,6 +682,144 @@ static const char *get_stub_response(const char *request_json)
 #endif
 
 esp_err_t llm_request(const char *request_json, char *response_buf, size_t response_buf_size)
+{
+    if (!request_json || !response_buf || response_buf_size == 0) {
+        ESP_LOGE(TAG, "Invalid llm_request arguments");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    response_buf[0] = '\0';
+
+#if CONFIG_ZCLAW_EMULATOR_LIVE_LLM
+    // In emulator bridge mode, delegate HTTPS API calls to a host-side proxy.
+    esp_err_t bridge_err = channel_llm_bridge_exchange(request_json, response_buf, response_buf_size,
+                                                       LLM_HTTP_TIMEOUT_MS + 30000);
+    if (bridge_err != ESP_OK) {
+        ESP_LOGE(TAG, "Host bridge request failed: %s", esp_err_to_name(bridge_err));
+        return bridge_err;
+    }
+    ESP_LOGI(TAG, "Host bridge response: %d bytes", (int)strlen(response_buf));
+    return ESP_OK;
+#elif defined(CONFIG_ZCLAW_STUB_LLM)
+    const char *stub = get_stub_response(request_json);
+    strncpy(response_buf, stub, response_buf_size - 1);
+    response_buf[response_buf_size - 1] = '\0';
+    ESP_LOGI(TAG, "Stub response: %d bytes", (int)strlen(response_buf));
+    return ESP_OK;
+#else
+    int64_t started_us = esp_timer_get_time();
+    net_diag_snapshot_t snapshot_before = {0};
+    net_diag_snapshot_t snapshot_after = {0};
+    int status = -1;
+    int http_gate_wait_ms = 0;
+    bool gate_acquired = false;
+
+    capture_net_diag_snapshot(&snapshot_before);
+
+    // Get current backend and API key
+    llm_backend_t backend = llm_get_backend();
+    const char *api_key = llm_get_api_key();
+
+    if (api_key[0] == '\0' && llm_backend_requires_api_key(backend)) {
+        ESP_LOGE(TAG, "No API key configured");
+        capture_net_diag_snapshot(&snapshot_after);
+        log_http_diag("llm_request", NULL, ESP_ERR_INVALID_STATE, -1, 0, false,
+                      started_us, NULL, &snapshot_before, &snapshot_after);
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    http_gate_wait_ms = (telegram_poll_timeout_for_backend(backend) * 1000) + 1000;
+    gate_acquired = http_gate_acquire("llm_request", pdMS_TO_TICKS(http_gate_wait_ms));
+    if (!gate_acquired) {
+        ESP_LOGE(TAG, "Timed out waiting for HTTP gate");
+        capture_net_diag_snapshot(&snapshot_after);
+        log_http_diag("llm_request", NULL, ESP_ERR_TIMEOUT, -1, 0, false,
+                      started_us, NULL, &snapshot_before, &snapshot_after);
+        return ESP_ERR_TIMEOUT;
+    }
+
+    // Thread-safe response context
+    http_response_ctx_t ctx = {
+        .buf = response_buf,
+        .len = 0,
+        .max = response_buf_size,
+        .truncated = false
+    };
+
+    esp_http_client_config_t config = {
+        .url = llm_get_api_url(),
+        .event_handler = http_event_handler,
+        .user_data = &ctx,
+        .timeout_ms = LLM_HTTP_TIMEOUT_MS,
+        .crt_bundle_attach = esp_crt_bundle_attach,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (!client) {
+        ESP_LOGE(TAG, "Failed to init HTTP client");
+        capture_net_diag_snapshot(&snapshot_after);
+        log_http_diag("llm_request", NULL, ESP_FAIL, -1, 0, false,
+                      started_us, NULL, &snapshot_before, &snapshot_after);
+        http_gate_release();
+        return ESP_FAIL;
+    }
+
+    // Set common headers
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+
+    // Set backend-specific headers
+    if (backend == LLM_BACKEND_ANTHROPIC) {
+        esp_http_client_set_header(client, "x-api-key", api_key);
+        esp_http_client_set_header(client, "anthropic-version", "2023-06-01");
+    } else if (backend == LLM_BACKEND_OPENAI || backend == LLM_BACKEND_OPENROUTER ||
+               (backend == LLM_BACKEND_OLLAMA && api_key[0] != '\0')) {
+        // OpenAI/OpenRouter use Bearer token. For Ollama, Bearer is optional and only sent
+        // when a key is explicitly provided (e.g. reverse proxy auth).
+        char auth_header[LLM_AUTH_HEADER_BUF_SIZE];
+        if (!llm_build_bearer_auth_header(api_key, auth_header, sizeof(auth_header))) {
+            ESP_LOGE(TAG, "API key length exceeds supported authorization header capacity");
+            esp_http_client_cleanup(client);
+            http_gate_release();
+            return ESP_ERR_INVALID_SIZE;
+        }
+        esp_http_client_set_header(client, "Authorization", auth_header);
+
+        // OpenRouter needs additional headers
+        if (backend == LLM_BACKEND_OPENROUTER) {
+            esp_http_client_set_header(client, "HTTP-Referer", "https://github.com/tnm/zclaw");
+            esp_http_client_set_header(client, "X-Title", "zclaw");
+        }
+    }
+
+    // Set body
+    esp_http_client_set_post_field(client, request_json, strlen(request_json));
+
+    ESP_LOGI(TAG, "Sending request to %s...", llm_backend_name(backend));
+
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        status = esp_http_client_get_status_code(client);
+        ESP_LOGI(TAG, "Response: %d, %d bytes", status, (int)ctx.len);
+
+        if (status != 200) {
+            ESP_LOGE(TAG, "API error: %s", response_buf);
+        }
+    } else {
+        ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
+    }
+
+    esp_http_client_cleanup(client);
+    http_gate_release();
+
+    capture_net_diag_snapshot(&snapshot_after);
+    log_http_diag("llm_request", llm_get_api_url(), err, status, ctx.len, ctx.truncated,
+                  started_us, NULL, &snapshot_before, &snapshot_after);
+
+    return err;
+#endif
+}
 {
     if (!request_json || !response_buf || response_buf_size == 0) {
         ESP_LOGE(TAG, "Invalid llm_request arguments");

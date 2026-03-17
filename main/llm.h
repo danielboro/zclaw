@@ -7,6 +7,8 @@
 extern bool s_fallback_llm;
 extern char s_fallback_url[192];
 extern char s_fallback_model[64];
+extern char s_fallback_backend_str[16];
+extern char s_fallback_api_key[LLM_API_KEY_BUF_SIZE];
 
 // Initialize the LLM HTTP client
 esp_err_t llm_init(void);
@@ -32,6 +34,9 @@ const char *llm_get_default_model(void);
 
 // Get current model (user-configured or default)
 const char *llm_get_model(void);
+
+// Get current API key (fallback or primary)
+const char *llm_get_api_key(void);
 
 // Check if backend uses OpenAI-compatible format (OpenAI, OpenRouter, Ollama)
 bool llm_is_openai_format(void);
