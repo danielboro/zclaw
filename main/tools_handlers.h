@@ -77,3 +77,4 @@ bool tools_loop_handler(const cJSON *input, char *result, size_t result_len);
 
 
 bool tools_switch_llm_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_get_llm_handler(const cJSON *input, char *result, size_t result_len);

@@ -188,3 +188,4 @@ TOOL_ENTRY("switchLLM",
            "Toggle between primary and fallback LLM configurations.",
            "{\"type\":\"object\",\"properties\":{}}",
            tools_switch_llm_handler)
+{ "get_current_llm", "Get current LLM model", tools_get_llm_handler, "" }
