@@ -1180,29 +1180,13 @@ if [ -n "$TG_TOKEN" ] && [ -z "$TG_CHAT_IDS" ]; then
 fi
 
 
-# Handle fallback URL and model
-if [ -z "$FALLBACK_URL" ] && [ "$ASSUME_YES" != true ]; then
-    read -r -p "Fallback LLM URL (default: ${CONFIG_ZCLAW_LLM_FALLBACK_URL:-http://localhost:11434/v1}): " FALLBACK_URL_INPUT
-    FALLBACK_URL="${FALLBACK_URL_INPUT:-${CONFIG_ZCLAW_LLM_FALLBACK_URL:-http://localhost:11434/v1}}"
-else
-    FALLBACK_URL="${FALLBACK_URL:-${CONFIG_ZCLAW_LLM_FALLBACK_URL:-http://localhost:11434/v1}}"
-fi
-
-if [ -z "$FALLBACK_MODEL" ] && [ "$ASSUME_YES" != true ]; then
-    read -r -p "Fallback model name (default: ${CONFIG_ZCLAW_LLM_FALLBACK_MODEL:-llama2}): " FALLBACK_MODEL_INPUT
-    FALLBACK_MODEL="${FALLBACK_MODEL_INPUT:-${CONFIG_ZCLAW_LLM_FALLBACK_MODEL:-llama2}}"
-else
-    FALLBACK_MODEL="${FALLBACK_MODEL:-${CONFIG_ZCLAW_LLM_FALLBACK_MODEL:-llama2}}"
-fi
-
-NVS_GEN="$IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py"
-PARTTOOL="$IDF_PATH/components/partition_table/parttool.py"
-
-if [ ! -f "$NVS_GEN" ]; then
-    echo "Error: nvs_partition_gen.py not found at $NVS_GEN"
-    exit 1
-fi
-if [ ! -f "$PARTTOOL" ]; then
+# Handle fallback URL and model: if not provided, set to primary
+    if [ -z "" ]; then
+        FALLBACK_URL="${API_URL:-{CONFIG_ZCLAW_LLM_FALLBACK_URL:-http://localhost:11434/v1}}"
+    fi
+    if [ -z "" ]; then
+        FALLBACK_MODEL="${MODEL:-{CONFIG_ZCLAW_LLM_FALLBACK_MODEL:-llama2}}"
+    fi
     echo "Error: parttool.py not found at $PARTTOOL"
     exit 1
 fi
