@@ -15,6 +15,8 @@ idf_component_register(
         "tools_persona.c"
         "tools_cron.c"
         "tools_system.c"
+        "tools_sleep.c"
+        "tools_loop.c"
         "memory.c"
         "json_util.c"
         "telegram.c"
