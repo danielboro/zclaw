@@ -76,4 +76,4 @@ bool tools_sleep_gpio_handler(const cJSON *input, char *result, size_t result_le
 bool tools_loop_handler(const cJSON *input, char *result, size_t result_len);
 
 
-esp_err_t tools_switch_llm_handler(cJSON *args, cJSON *response, void *user_data);
+bool tools_switch_llm_handler(const cJSON *input, char *result, size_t result_len);

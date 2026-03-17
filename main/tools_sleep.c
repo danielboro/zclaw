@@ -78,13 +78,19 @@ bool tools_sleep_gpio_handler(const cJSON *input, char *result, size_t result_le
 }
 
 // switchLLM - toggle between primary and fallback LLM configuration
-static esp_err_t tools_switch_llm_handler(cJSON *args, cJSON *response, void *user_data)
+// Switch between primary and fallback LLM
+bool tools_switch_llm_handler(const cJSON *input, char *result, size_t result_len)
 {
-    cJSON_AddStringToObject(response, "status", "ok");
-    cJSON_AddBoolToObject(response, "previous", s_fallback_llm);
+    if (!result) return false;
+    
+    bool previous = s_fallback_llm;
     s_fallback_llm = !s_fallback_llm;
     llm_init();
-    cJSON_AddBoolToObject(response, "current", s_fallback_llm);
-    cJSON_AddStringToObject(response, "mode", s_fallback_llm ? "fallback (Ollama by default)" : "primary");
-    return ESP_OK;
+    
+    snprintf(result, result_len, 
+        "{\"previous\":%s,\"current\":%s,\"mode\":\"%s\"}",
+        previous ? "true" : "false",
+        s_fallback_llm ? "true" : "false",
+        s_fallback_llm ? "fallback" : "primary");
+    return true;
 }
