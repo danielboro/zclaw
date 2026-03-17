@@ -167,3 +167,24 @@ TOOL_ENTRY("screen_off",
            "Turn the T-Display backlight off (GPIO4 low).",
            "{\"type\":\"object\",\"properties\":{}}",
            tools_screen_off_handler)
+
+// Sleep and Loop tools
+TOOL_ENTRY("sleep_timer",
+           "Wait for specified seconds then wake up.",
+           "{\"type\":\"object\",\"properties\":{\"seconds\":{\"type\":\"integer\",\"description\":\"Number of seconds to wait\"}},\"required\":[\"seconds\"]}",
+           tools_sleep_timer_handler)
+
+TOOL_ENTRY("sleep_gpio",
+           "Wake up when GPIO pin changes state.",
+           "{\"type\":\"object\",\"properties\":{\"pin\":{\"type\":\"integer\",\"description\":\"GPIO pin number\"},\"state\":{\"type\":\"string\",\"enum\":[\"high\",\"low\"],\"description\":\"Wait for pin to go high or low\"}},\"required\":[\"pin\",\"state\"]}",
+           tools_sleep_gpio_handler)
+
+TOOL_ENTRY("loop",
+           "Repeat a tool execution multiple times.",
+           "{\"type\":\"object\",\"properties\":{\"count\":{\"type\":\"integer\",\"description\":\"Number of times to repeat\"},\"start\":{\"type\":\"integer\",\"description\":\"Starting count value\"},\"tool\":{\"type\":\"string\",\"description\":\"Name of the tool to repeat\"},\"args\":{\"type\":\"object\",\"description\":\"Arguments to pass to the tool\"}},\"required\":[\"count\",\"tool\",\"args\"]}",
+           tools_loop_handler)
+
+TOOL_ENTRY("switchLLM",
+           "Toggle between primary and fallback LLM configurations.",
+           "{\"type\":\"object\",\"properties\":{}}",
+           tools_switch_llm_handler)
