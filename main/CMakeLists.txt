@@ -50,7 +50,7 @@ idf_component_register(
         json
         esp_driver_uart
         esp_driver_gpio
-        lwip
+        esp_driver_i2c
         esp_driver_usb_serial_jtag
         app_update
         esp_adc
