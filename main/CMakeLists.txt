@@ -47,10 +47,17 @@ idf_component_register(
         esp_netif
         esp-tls
         esp_timer
+<<<<<<< HEAD
 cjson
         esp_driver_uart
         esp_driver_gpio
         lwip
+=======
+        json
+        esp_driver_uart
+        esp_driver_gpio
+        esp_driver_i2c
+>>>>>>> upstream/main
         esp_driver_usb_serial_jtag
         app_update
         esp_adc
