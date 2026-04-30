@@ -47,8 +47,9 @@ idf_component_register(
         esp_netif
         esp-tls
         esp_timer
-        json
-        driver
+cjson
+        esp_driver_uart
+        esp_driver_gpio
         lwip
         esp_driver_usb_serial_jtag
         app_update
