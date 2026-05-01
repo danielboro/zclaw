@@ -39,6 +39,7 @@ idf_component_register(
         "font8x8.c"
         "power_tdisplay.c"
         "ttgo.c"
+        "tools_get_llm.c"
     INCLUDE_DIRS "."
     REQUIRES
         nvs_flash
@@ -67,5 +68,3 @@ if(EXISTS "${ZCLAW_VERSION_FILE}")
 endif()
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE ZCLAW_VERSION="${ZCLAW_RELEASE_VERSION}")
-SRCS
-    "tools_get_llm.c"
