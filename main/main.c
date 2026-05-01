@@ -65,10 +65,13 @@ static const char *wifi_disconnect_reason_name(uint8_t reason)
     switch (reason) {
         case WIFI_REASON_AUTH_EXPIRE: return "AUTH_EXPIRE";
         case WIFI_REASON_AUTH_LEAVE: return "AUTH_LEAVE";
-        case WIFI_REASON_ASSOC_EXPIRE: return "ASSOC_EXPIRE";
+        // `WIFI_REASON_ASSOC_EXPIRE` was removed in ESP‑IDF v6.1; use the closest existing reason.
+        case WIFI_REASON_AUTH_EXPIRE: return "ASSOC_EXPIRE"; // map to AUTH_EXPIRE for compatibility
         case WIFI_REASON_ASSOC_TOOMANY: return "ASSOC_TOOMANY";
-        case WIFI_REASON_NOT_AUTHED: return "NOT_AUTHED";
-        case WIFI_REASON_NOT_ASSOCED: return "NOT_ASSOCED";
+        // `WIFI_REASON_NOT_AUTHED` no longer exists; map to `WIFI_REASON_ASSOC_NOT_AUTHED`.
+        case WIFI_REASON_ASSOC_NOT_AUTHED: return "NOT_AUTHED";
+        // `WIFI_REASON_NOT_ASSOCED` was replaced; map to `WIFI_REASON_NO_AP_FOUND`.
+        case WIFI_REASON_NO_AP_FOUND: return "NOT_ASSOCED";
         case WIFI_REASON_ASSOC_LEAVE: return "ASSOC_LEAVE";
         case WIFI_REASON_ASSOC_NOT_AUTHED: return "ASSOC_NOT_AUTHED";
         case WIFI_REASON_MIC_FAILURE: return "MIC_FAILURE";

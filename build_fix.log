@@ -1,0 +1,41 @@
+Executing action: all (aliases: build)
+Running cmake in directory /a0/usr/projects/zclaw/build
+Executing "cmake -G Ninja -B /a0/usr/projects/zclaw/build -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/root/.espressif/python_env/idf6.1_py3.13_env/bin/python -DESP_PLATFORM=1 -DCCACHE_ENABLE=False /a0/usr/projects/zclaw"...
+-- IDF_TARGET is not set, guessed 'esp32' from sdkconfig '/a0/usr/projects/zclaw/sdkconfig.defaults'
+-- Found Git: /usr/bin/git (found version "2.53.0")
+-- Component directory /a0/usr/projects/zclaw/esp-idf/components/idf_test does not contain a CMakeLists.txt file. No component will be added
+-- Minimal build - OFF
+-- The C compiler identification is GNU 15.2.0
+-- The CXX compiler identification is GNU 15.2.0
+-- The ASM compiler identification is GNU
+-- Found assembler: /root/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /root/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /root/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32-elf-g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Building ESP-IDF components for target esp32
+NOTICE: Processing 1 dependencies:
+NOTICE: [1/1] idf (6.1.0)
+-- ESP-TEE is currently supported only on the esp32c6;esp32h2;esp32c5;esp32c61 SoCs
+CMake Error at esp-idf/tools/cmake/build.cmake:380 (message):
+  Failed to resolve component 'cjson' required by component 'main': unknown
+  name.
+Call Stack (most recent call first):
+  esp-idf/tools/cmake/build.cmake:423 (__build_resolve_and_add_req)
+  esp-idf/tools/cmake/build.cmake:768 (__build_expand_requirements)
+  esp-idf/tools/cmake/project.cmake:773 (idf_build_process)
+  CMakeLists.txt:3 (project)
+
+
+-- Configuring incomplete, errors occurred!
+[0;33mHINT: The component 'cjson' could not be found. This could be because: component name was misspelled, the component was not added to the build, the component has been moved to the IDF component manager, the component has been removed and refactored into some other component or the component may not be supported by the selected target.
+Please look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.
+Refer to the migration guide for more details about moved components.
+Refer to the build-system guide for more details about how components are found and included in the build.[0m
+cmake failed with exit code 1, output of the command is in the /a0/usr/projects/zclaw/build/log/idf_py_stderr_output_2282 and /a0/usr/projects/zclaw/build/log/idf_py_stdout_output_2282
