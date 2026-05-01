@@ -1,4 +1,4 @@
-static 
+static static 
 
 #include <string.h>
 #include "esp_log.h"
