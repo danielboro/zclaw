@@ -67,3 +67,5 @@ if(EXISTS "${ZCLAW_VERSION_FILE}")
 endif()
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE ZCLAW_VERSION="${ZCLAW_RELEASE_VERSION}")
+SRCS
+    "tools_get_llm.c"
