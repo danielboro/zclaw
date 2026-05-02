@@ -335,27 +335,6 @@ static void log_http_diag(const char *operation,
     }
 }
 
-static void log_http_failure(const char *operation, esp_http_client_handle_t client, esp_err_t err)
-{
-    int status = -1;
-    int sock_errno = 0;
-    esp_http_client_transport_t transport = HTTP_TRANSPORT_UNKNOWN;
-
-    if (client) {
-        status = esp_http_client_get_status_code(client);
-        sock_errno = esp_http_client_get_errno(client);
-        transport = esp_http_client_get_transport_type(client);
-    }
-
-    ESP_LOGE(TAG,
-             "%s failed: err=%s(%d) status=%d errno=%d(%s) transport=%s",
-             operation ? operation : "HTTP request",
-             esp_err_to_name(err), err,
-             status,
-             sock_errno,
-             sock_errno ? strerror(sock_errno) : "n/a",
-             http_transport_name(transport));
-}
 
 // HTTP event handler
 static esp_err_t http_event_handler(esp_http_client_event_t *evt)
