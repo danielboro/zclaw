@@ -228,3 +228,24 @@ void printValues(int header)
 
 
 
+
+void clearScreen(uint8_t pxRed, uint8_t pxGreen, uint8_t pxBlue) {
+    // Stub implementation
+}
+
+void fillBox(unsigned x, unsigned y, unsigned w, unsigned h, uint8_t pxRed, uint8_t pxGreen, uint8_t pxBlue) {
+    // Stub implementation
+}
+
+void fillBox2(unsigned x, unsigned y, unsigned w, unsigned h, uint8_t pxRed, uint8_t pxGreen, uint8_t pxBlue, uint8_t * data, int headPtr) {
+    // Stub implementation
+}
+
+unsigned displayStr(char *str, unsigned x, unsigned y, uint8_t pxRed, uint8_t pxGreen, uint8_t pxBlue, uint8_t size) {
+    // Stub implementation
+    return 0;
+}
+
+void initTTGO() {
+    // Stub implementation
+}
