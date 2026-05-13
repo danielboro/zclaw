@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+bool llm_toggle_fallback(void);
 
 static const char *TAG = "llm";
 
@@ -587,6 +588,14 @@ const char *llm_get_api_key(void)
     if (s_fallback_llm && s_fallback_api_key[0] != '\0')
         return s_fallback_api_key;
     return s_api_key;
+
+bool llm_toggle_fallback(void)
+{
+    s_fallback_llm = !s_fallback_llm;
+    ESP_LOGI(TAG, "Toggled fallback LLM: %s", s_fallback_llm ? "enabled" : "disabled");
+    return s_fallback_llm;
+}
+
 }
 
 
@@ -768,11 +777,13 @@ esp_err_t llm_request(const char *request_json, char *response_buf, size_t respo
         ESP_LOGI(TAG, "Response: %d, %d bytes", status, (int)ctx.len);
 
         if (status != 200) {
-            ESP_LOGE(TAG, "API error: %s", response_buf);
-        }
+         ESP_LOGE(TAG, "API error: %s", response_buf);
+         llm_toggle_fallback();
+     }
     } else {
-        ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
-    }
+         ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
+         llm_toggle_fallback();
+     }
 
     esp_http_client_cleanup(client);
     http_gate_release();
