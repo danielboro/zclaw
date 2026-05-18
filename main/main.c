@@ -283,6 +283,17 @@ void app_main(void)
         esp_restart();
     }
 
+ #if CONFIG_ZCLAW_T_DISPLAY
+    esp_err_t display_init_err = display_init();
+    if (display_init_err != ESP_OK) {
+        ESP_LOGW(TAG, "Display init failed: %s", esp_err_to_name(display_init_err));
+    } else {
+        display_start_task();
+        power_init();
+        display_set_message("zclaw ready");
+    }
+#endif
+
     // 11. Start task to clear boot counter after stable period
     if (xTaskCreate(clear_boot_count, "boot_ok", BOOT_OK_TASK_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create boot confirmation task");
