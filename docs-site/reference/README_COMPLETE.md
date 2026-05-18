@@ -54,7 +54,7 @@ Classic ESP32-WROOM/DevKit (`esp32` target) is supported and tested. Other ESP32
 variants may work too (some may require manual ESP-IDF target setup):
 
 - Default GPIO tool pin limits are configured for ESP32-C3 dev workflows (`GPIO 2-10`).
-- On classic ESP32-WROOM/DevKit (`esp32` target), runtime guardrails block GPIO6-11 because those pins are wired to SPI flash/PSRAM.
+- On classic ESP32-WROOM/DevKit (`esp32` target), runtime guardrails block GPIO6-11 because those pins are wired to SPI flash/PSRAM, so a stock classic-ESP32 build effectively exposes only `GPIO 2-5` until you change GPIO Tool Safety or use a board preset.
 - If your board wiring differs, adjust `zclaw Configuration -> GPIO Tool Safety` in `idf.py menuconfig`.
 - For boards with non-contiguous pins (for example XIAO ESP32S3), set `Allowed GPIO pins list` to a comma-separated whitelist. Example for XIAO ESP32S3 D0-D10: `1,2,3,4,5,6,7,8,9,43,44`
 
@@ -77,6 +77,17 @@ ESP32-S3-BOX-3 preset:
 ```
 
 `--box-3` applies the `esp32s3` target plus board-specific GPIO safety and factory-reset defaults.
+
+LilyGO TTGO T-Relay preset:
+
+```bash
+./scripts/build.sh --t-relay
+./scripts/flash.sh --t-relay /dev/cu.usbserial-0001
+# or encrypted flash:
+./scripts/flash-secure.sh --t-relay /dev/cu.usbserial-0001
+```
+
+`--t-relay` applies the `esp32` target plus a relay-safe GPIO allowlist: `5,18,19,21`.
 
 ## Quick Start
 
@@ -146,6 +157,7 @@ Direct chapter links:
 - [Tool Reference](docs-site/tools.html)
 - [Architecture](docs-site/architecture.html)
 - [Security](docs-site/security.html)
+- [Local Admin Console](docs-site/local-admin.html)
 - [Docs site README](docs-site/README.md)
 
 ### Telegram Setup
@@ -197,6 +209,31 @@ No board yet? Run with a built-in mock responder:
 
 This relay approach does not add web UI code to ESP32 firmware binary.
 
+### Local Admin Console
+
+When the board is in safe mode, unprovisioned, or the normal network path is unavailable, you can still operate it over USB serial without Wi-Fi or an LLM round trip.
+
+```bash
+./scripts/monitor.sh /dev/cu.usbmodem1101
+# then type:
+/wifi status
+/wifi scan
+/bootcount
+/gpio all
+/reboot
+```
+
+Available local-only commands:
+
+- `/gpio [all|pin|pin high|pin low]`
+- `/diag [scope] [verbose]`
+- `/reboot`
+- `/wifi [status|scan]`
+- `/bootcount`
+- `/factory-reset confirm` (destructive; wipes NVS and reboots)
+
+Full reference: [Local Admin Console](docs-site/local-admin.html)
+
 ## Tools
 
 | Tool | Description |
@@ -206,6 +243,10 @@ This relay approach does not add web UI code to ESP32 firmware binary.
 | `gpio_read_all` | Read all tool-allowed GPIO pin states in one call |
 | `delay` | Wait milliseconds (max 60000) |
 | `i2c_scan` | Scan I2C bus and list responding addresses |
+| `i2c_write` | Write hex bytes to a 7-bit I2C device |
+| `i2c_read` | Read raw bytes from a 7-bit I2C device |
+| `i2c_write_read` | Write bytes, then read bytes from the same I2C device |
+| `dht_read` | Read DHT11/DHT22 humidity and temperature on one GPIO pin |
 | `memory_set` | Store persistent user key-value (`u_*` keys only) |
 | `memory_get` | Retrieve stored user value (`u_*` keys only) |
 | `memory_list` | List stored user keys (`u_*`) |
@@ -225,17 +266,39 @@ This relay approach does not add web UI code to ESP32 firmware binary.
 
 Built-in firmware update tools are temporarily disabled and marked as coming soon.
 
-`i2c_scan` requires `sda_pin` and `scl_pin` inputs (plus optional `frequency_hz`).
-Example tool call input:
+`i2c_scan`, `i2c_write`, `i2c_read`, and `i2c_write_read` require `sda_pin` and `scl_pin` inputs (plus optional `frequency_hz`).
+I2C addresses are 7-bit decimal integers in JSON. For example, `118` means `0x76`.
+
+Example I2C scan:
 
 ```json
 {"sda_pin":8,"scl_pin":9,"frequency_hz":100000}
 ```
 
+Example register read via I2C:
+
+```json
+{"sda_pin":8,"scl_pin":9,"address":118,"write_hex":"0xD0","read_length":1}
+```
+
+Example register write via I2C:
+
+```json
+{"sda_pin":8,"scl_pin":9,"address":118,"data_hex":"0xF4 0x2E"}
+```
+
+`dht_read` is separate because DHT sensors do not use I2C. They use a timing-sensitive single-wire protocol on one GPIO pin.
+
+Example DHT read:
+
+```json
+{"pin":5,"model":"dht22"}
+```
+
 ### Runtime Diagnostics (`get_diagnostics`)
 
 `get_diagnostics` is a deeper companion to `get_health`. It supports scoped checks plus an optional `verbose` mode.
-For Telegram control-plane checks without an LLM round trip, use `/diag [scope] [verbose]`.
+For USB-local diagnostics without an LLM round trip, use `/diag [scope] [verbose]` on the serial console.
 
 - `scope: quick` (default) — one-line snapshot for uptime, heap, rates, time sync, timezone, boot count, and version
 - `scope: runtime` — uptime, boot count, firmware version
@@ -336,13 +399,24 @@ bool tools_relay_status_handler(const cJSON *input, char *result, size_t result_
 }
 ```
 
-2. Declare it in `main/tools_handlers.h`:
+2. Add the new source file to `main/CMakeLists.txt` (skip if you extended an existing `tools_*.c`):
+
+```cmake
+idf_component_register(
+    SRCS
+        ...
+        "tools_relay.c"
+        ...
+)
+```
+
+3. Declare it in `main/tools_handlers.h`:
 
 ```c
 bool tools_relay_status_handler(const cJSON *input, char *result, size_t result_len);
 ```
 
-3. Register it in `main/builtin_tools.def`:
+4. Register it in `main/builtin_tools.def`:
 
 ```c
 TOOL_ENTRY("relay_status",
@@ -351,8 +425,8 @@ TOOL_ENTRY("relay_status",
            tools_relay_status_handler)
 ```
 
-4. Add host tests in `test/host/` for validation and output shape.
-5. Run the normal firmware flow:
+5. Add host tests in `test/host/` for validation and output shape.
+6. Run the normal firmware flow:
 
 ```bash
 ./scripts/test.sh host
@@ -536,6 +610,7 @@ zclaw/
 ├── install.sh          # One-line setup script
 ├── partitions.csv      # Flash partition layout (dual OTA)
 ├── sdkconfig.defaults  # SDK defaults
+├── sdkconfig.esp32-t-relay.defaults # LilyGO TTGO T-Relay preset defaults
 └── sdkconfig.esp32s3-box-3.defaults # ESP32-S3-BOX-3 preset defaults
 ```
 

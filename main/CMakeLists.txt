@@ -2,7 +2,10 @@ idf_component_register(
     SRCS
         "main.c"
         "agent.c"
+        "agent_commands.c"
+        "agent_prompt.c"
         "channel.c"
+        "local_admin.c"
         "llm.c"
         "llm_auth.c"
         "http_gate.c"
@@ -11,6 +14,7 @@ idf_component_register(
         "gpio_policy.c"
         "tools_gpio.c"
         "tools_i2c.c"
+        "tools_dht.c"
         "tools_memory.c"
         "tools_persona.c"
         "tools_cron.c"
@@ -20,7 +24,9 @@ idf_component_register(
         "memory.c"
         "json_util.c"
         "telegram.c"
+        "telegram_http_diag.c"
         "telegram_poll_policy.c"
+        "telegram_targets.c"
         "telegram_chat_ids.c"
         "telegram_token.c"
         "cron.c"
@@ -60,11 +66,9 @@ idf_component_register(
         lwip
 )
 
-set(ZCLAW_VERSION_FILE "${CMAKE_SOURCE_DIR}/VERSION")
 set(ZCLAW_RELEASE_VERSION "dev")
-if(EXISTS "${ZCLAW_VERSION_FILE}")
-    file(READ "${ZCLAW_VERSION_FILE}" ZCLAW_RELEASE_VERSION)
-    string(STRIP "${ZCLAW_RELEASE_VERSION}" ZCLAW_RELEASE_VERSION)
+if(DEFINED PROJECT_VER AND NOT PROJECT_VER STREQUAL "")
+    set(ZCLAW_RELEASE_VERSION "${PROJECT_VER}")
 endif()
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE ZCLAW_VERSION="${ZCLAW_RELEASE_VERSION}")

@@ -35,7 +35,8 @@
           <li><a href="build-your-own-tool.html">Chapter 5 · Build Your Own Tool</a></li>
           <li><a href="local-dev.html">Chapter 6 · Local Dev &amp; Hacking</a></li>
           <li><a href="use-cases.html">Chapter 7 · Use Cases</a></li>
-          <li><a href="changelog.html">Chapter 8 · Changelog</a></li>
+          <li><a href="local-admin.html">Chapter 8 · Local Admin Console</a></li>
+          <li><a href="changelog.html">Chapter 9 · Changelog</a></li>
         </ul>
       </aside>
 
@@ -216,7 +217,7 @@ bash &lt;(curl -fsSL https://raw.githubusercontent.com/danielboro/zclaw/main/scr
           <h2>Advanced Board Config</h2>
           <pre>source ~/esp/esp-idf/export.sh
 idf.py menuconfig</pre>
-          <p>Adjust GPIO safety range/allowlist under <code>zclaw Configuration -&gt; GPIO Tool Safety</code>.</p>
+          <p>Adjust GPIO safety range/allowlist under <code>zclaw Configuration -&gt; GPIO Tool Safety</code>. On classic <code>esp32</code> targets, the default starter range is intentionally conservative; with flash pins blocked, a stock build effectively exposes only GPIO 2-5 until you change the policy or use a board preset.</p>
         </section>
 
         <section class="section">
@@ -229,6 +230,12 @@ idf.py menuconfig</pre>
 # or encrypted flash:
 ./scripts/flash-secure.sh --box-3 /dev/cu.usbmodem1101</pre>
           <p class="inline-note"><code>--box-3</code> applies <code>esp32s3</code> target, board-safe GPIO allowlist, and factory-reset pin defaults.</p>
+          <pre># LilyGO TTGO T-Relay preset
+./scripts/build.sh --t-relay
+./scripts/flash.sh --t-relay /dev/cu.usbserial-0001
+# or encrypted flash:
+./scripts/flash-secure.sh --t-relay /dev/cu.usbserial-0001</pre>
+          <p class="inline-note"><code>--t-relay</code> applies the classic <code>esp32</code> target and a relay-safe GPIO allowlist for the LilyGO TTGO T-Relay: GPIO 5, 18, 19, and 21.</p>
         </section>
 
         <section class="section">
@@ -240,6 +247,7 @@ cd ~/esp/esp-idf
 # Build/test routines
 ./scripts/build.sh
 ./scripts/test.sh host</pre>
+          <p class="inline-note">For safe-mode recovery and pre-network board checks, use the USB local admin console in <a href="local-admin.html">Chapter 8</a>.</p>
         </section>
 
         <section class="section">

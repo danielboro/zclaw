@@ -8,6 +8,60 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 - No unreleased changes yet.
 
+## [2.13.0] - 2026-03-22
+
+### Added
+- Added `dht_read` for direct `DHT11` and `DHT22` temperature/humidity reads from a single GPIO pin.
+- Added generic raw I2C bus tools: `i2c_scan`, `i2c_write`, `i2c_read`, and `i2c_write_read`.
+
+### Fixed
+- Trimmed outbound TLS feature usage to recover firmware headroom and keep the classic ESP32 build comfortably under the `888 KiB` binary budget.
+- Hardened built-in tool schema generation so zero-argument tools emit explicit empty object properties accepted by the current OpenAI-compatible tool schema validators.
+- Fixed the host benchmark `--append-counter` path so warmup and measured requests use a monotonic suffix and no longer trip repeated-prompt suppression during serial soaks.
+
+### Docs
+- Updated README and docs-site references for the new DHT and generic I2C tool surface, including guidance on when to use DHT versus raw I2C transactions.
+
+### Tests
+- Added host coverage for DHT decoding/handler behavior, generic I2C policy and transaction paths, zero-argument built-in tool schemas, and benchmark counter sequencing across warmup and measured runs.
+
+## [2.12.1] - 2026-03-18
+
+### Fixed
+- Added a first-class `esp32-t-relay` board preset across build, flash, and secure-flash flows so LilyGO TTGO T-Relay users can target the board's relay GPIOs (`5`, `18`, `19`, `21`) without getting stuck behind the generic `GPIO 2-10` starter policy.
+- Aligned ESP-IDF app metadata/version reporting with the checked-in `VERSION` file so firmware builds now advertise `2.12.1` instead of falling back to `git describe`.
+
+### Docs
+- Clarified that stock classic `esp32` builds keep a deliberately conservative GPIO starter range and, with flash-pin blocking applied, effectively expose only `GPIO 2-5` until the GPIO policy is changed or a board preset is used.
+- Documented the new `--t-relay` preset in the getting-started and full-reference docs.
+
+### Tests
+- Added host coverage for the new T-Relay preset path in build/flash scripts, including target-mismatch rejection behavior.
+
+## [2.12.0] - 2026-03-09
+
+### Added
+- Added a USB-local admin console with `/gpio`, `/diag`, `/wifi status`, `/wifi scan`, `/bootcount`, `/reboot`, and guarded `/factory-reset confirm` commands for recovery, safe mode, and pre-network bring-up.
+
+### Changed
+- Routed local admin commands ahead of the LLM path and restricted them to USB-local callers instead of allowing Telegram or web relay traffic to invoke them.
+- Shared factory-reset behavior across the physical reset-button path and the new local admin console command path.
+
+### Docs
+- Added a dedicated Local Admin Console chapter to the docs site and updated README/getting-started/tool-reference docs for the new recovery/admin workflow.
+
+### Tests
+- Added host coverage for local admin command dispatch, local-only rejection for remote callers, and reboot/factory-reset command behavior.
+
+## [2.11.2] - 2026-03-07
+
+### Changed
+- Split command parsing and persona/system-prompt helpers out of `main/agent.c` into focused helper modules.
+- Split Telegram target-routing and HTTP diagnostics helpers out of `main/telegram.c` to keep the runtime logic smaller and easier to maintain.
+
+### Tests
+- Added direct host coverage for the extracted Telegram HTTP diagnostics helpers.
+
 ## [2.11.1] - 2026-03-07
 
 ### Fixed

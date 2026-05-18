@@ -35,7 +35,8 @@
           <li><a href="build-your-own-tool.html">Chapter 5 · Build Your Own Tool</a></li>
           <li><a href="local-dev.html">Chapter 6 · Local Dev &amp; Hacking</a></li>
           <li><a href="use-cases.html">Chapter 7 · Use Cases</a></li>
-          <li><a href="changelog.html">Chapter 8 · Changelog</a></li>
+          <li><a href="local-admin.html">Chapter 8 · Local Admin Console</a></li>
+          <li><a href="changelog.html">Chapter 9 · Changelog</a></li>
         </ul>
       </aside>
 
@@ -48,7 +49,7 @@
         </div>
 
         <header>
-          <p class="kicker">chapter 8</p>
+          <p class="kicker">chapter 9</p>
           <h1 class="page-title">Changelog</h1>
           <p class="deck">Release notes for zclaw firmware and docs. For full detail and source control context, use the repository changelog.</p>
         </header>
@@ -69,6 +70,26 @@
               <tr><th>Version</th><th>Date</th><th>Highlights</th></tr>
             </thead>
             <tbody>
+              <tr>
+                <td><code>2.13.0</code></td>
+                <td>2026-03-22</td>
+                <td>Minor release: added first-class <code>dht_read</code> support for <code>DHT11</code>/<code>DHT22</code>, added generic raw I2C tools (<code>i2c_scan</code>, <code>i2c_write</code>, <code>i2c_read</code>, <code>i2c_write_read</code>), trimmed TLS features to preserve binary headroom under the <code>888 KiB</code> budget, hardened zero-argument tool schemas for OpenAI-compatible validators, and fixed benchmark counter sequencing for reliable serial soaks.</td>
+              </tr>
+              <tr>
+                <td><code>2.12.1</code></td>
+                <td>2026-03-18</td>
+                <td>Bugfix release: added a first-class <code>esp32-t-relay</code> board preset across build/flash flows for LilyGO TTGO T-Relay boards, aligned firmware app-version metadata with the checked-in release version, clarified the conservative default GPIO policy on classic <code>esp32</code> builds, and added host coverage for the new preset plus target-mismatch guardrails.</td>
+              </tr>
+              <tr>
+                <td><code>2.12.0</code></td>
+                <td>2026-03-09</td>
+                <td>Minor release: added a USB-local admin console for <code>/gpio</code>, <code>/diag</code>, <code>/wifi</code>, <code>/bootcount</code>, <code>/reboot</code>, and guarded <code>/factory-reset</code> recovery commands, kept them available in safe mode and before network bring-up, and documented the workflow across README and the docs site.</td>
+              </tr>
+              <tr>
+                <td><code>2.11.2</code></td>
+                <td>2026-03-07</td>
+                <td>Patch release: split agent command/persona helpers and Telegram target/HTTP diagnostics helpers into smaller internal modules, and added direct host coverage for the extracted Telegram HTTP diagnostics path.</td>
+              </tr>
               <tr>
                 <td><code>2.11.1</code></td>
                 <td>2026-03-07</td>

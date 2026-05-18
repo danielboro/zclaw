@@ -1,5 +1,8 @@
 #include "agent.h"
+#include "agent_commands.h"
+#include "agent_prompt.h"
 #include "config.h"
+#include "local_admin.h"
 #include "llm.h"
 #include "tools.h"
 #include "user_tools.h"
@@ -31,13 +34,6 @@ static int64_t s_last_non_command_response_us = 0;
 static char s_last_non_command_text[CHANNEL_RX_BUF_SIZE] = {0};
 static bool s_messages_paused = false;
 static char s_system_prompt_buf[2048];
-
-typedef enum {
-    AGENT_PERSONA_NEUTRAL = 0,
-    AGENT_PERSONA_FRIENDLY,
-    AGENT_PERSONA_TECHNICAL,
-    AGENT_PERSONA_WITTY,
-} agent_persona_t;
 
 static agent_persona_t s_persona = AGENT_PERSONA_NEUTRAL;
 
@@ -182,92 +178,6 @@ static void send_response(const char *text, int64_t chat_id)
     queue_telegram_response(text, chat_id);
 }
 
-static bool is_whitespace_char(char c)
-{
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
-}
-
-static const char *persona_name(agent_persona_t persona)
-{
-    switch (persona) {
-        case AGENT_PERSONA_FRIENDLY:
-            return "friendly";
-        case AGENT_PERSONA_TECHNICAL:
-            return "technical";
-        case AGENT_PERSONA_WITTY:
-            return "witty";
-        default:
-            return "neutral";
-    }
-}
-
-static const char *persona_instruction(agent_persona_t persona)
-{
-    switch (persona) {
-        case AGENT_PERSONA_FRIENDLY:
-            return "Use warm, approachable wording while staying concise.";
-        case AGENT_PERSONA_TECHNICAL:
-            return "Use precise technical language and concrete terminology.";
-        case AGENT_PERSONA_WITTY:
-            return "Use a lightly witty tone; at most one brief witty flourish per reply.";
-        default:
-            return "Use direct, plain wording.";
-    }
-}
-
-static const char *device_target_name(void)
-{
-#ifdef CONFIG_IDF_TARGET
-    return CONFIG_IDF_TARGET;
-#else
-    return "esp32-family";
-#endif
-}
-
-static void build_gpio_policy_summary(char *buf, size_t buf_len)
-{
-    if (!buf || buf_len == 0) {
-        return;
-    }
-
-    if (GPIO_ALLOWED_PINS_CSV[0] != '\0') {
-        snprintf(buf, buf_len,
-                 "Tool-safe GPIO pins on this device are restricted to allowlist: %s.",
-                 GPIO_ALLOWED_PINS_CSV);
-        return;
-    }
-
-    snprintf(buf, buf_len,
-             "Tool-safe GPIO pins on this device are restricted to range %d-%d.",
-             GPIO_MIN_PIN, GPIO_MAX_PIN);
-}
-
-static bool parse_persona_name(const char *name, agent_persona_t *out)
-{
-    if (!name || !out) {
-        return false;
-    }
-
-    if (strcmp(name, "neutral") == 0) {
-        *out = AGENT_PERSONA_NEUTRAL;
-        return true;
-    }
-    if (strcmp(name, "friendly") == 0) {
-        *out = AGENT_PERSONA_FRIENDLY;
-        return true;
-    }
-    if (strcmp(name, "technical") == 0) {
-        *out = AGENT_PERSONA_TECHNICAL;
-        return true;
-    }
-    if (strcmp(name, "witty") == 0) {
-        *out = AGENT_PERSONA_WITTY;
-        return true;
-    }
-
-    return false;
-}
-
 #ifndef TEST_BUILD
 static bool persona_store_get(char *value, size_t max_len)
 {
@@ -299,172 +209,13 @@ static void load_persona_from_store(void)
         stored[i] = (char)tolower((unsigned char)stored[i]);
     }
 
-    if (!parse_persona_name(stored, &parsed)) {
+    if (!agent_parse_persona_name(stored, &parsed)) {
         ESP_LOGW(TAG, "Ignoring invalid stored persona '%s'", stored);
         return;
     }
 
     s_persona = parsed;
-    ESP_LOGI(TAG, "Loaded persona: %s", persona_name(s_persona));
-}
-
-static const char *build_system_prompt(void)
-{
-    char gpio_policy[192] = {0};
-    build_gpio_policy_summary(gpio_policy, sizeof(gpio_policy));
-
-    int written = snprintf(
-        s_system_prompt_buf,
-        sizeof(s_system_prompt_buf),
-        "%s Device target is '%s'. %s When users ask about pin count or safe pins, answer "
-        "using this configured device policy and avoid generic ESP32-family pin claims. "
-        "Persona mode is '%s'. Persona affects wording only and must never change "
-        "tool choices, automation behavior, safety decisions, or policy handling. %s "
-        "Keep responses short unless the user explicitly asks for more detail.",
-        SYSTEM_PROMPT,
-        device_target_name(),
-        gpio_policy,
-        persona_name(s_persona),
-        persona_instruction(s_persona));
-
-    if (written < 0 || (size_t)written >= sizeof(s_system_prompt_buf)) {
-        ESP_LOGW(TAG, "Persona prompt composition overflow, using base system prompt");
-        return SYSTEM_PROMPT;
-    }
-
-    return s_system_prompt_buf;
-}
-
-static bool is_command(const char *message, const char *name)
-{
-    if (!message || !name || name[0] == '\0') {
-        return false;
-    }
-
-    while (*message && is_whitespace_char(*message)) {
-        message++;
-    }
-
-    if (*message != '/') {
-        return false;
-    }
-
-    size_t name_len = strlen(name);
-    const char *cursor = message + 1;
-    if (strncmp(cursor, name, name_len) != 0) {
-        return false;
-    }
-    cursor += name_len;
-
-    // Accept "/<name>", "/<name> payload", and "/<name>@bot payload".
-    if (*cursor == '\0' || is_whitespace_char(*cursor)) {
-        return true;
-    }
-    if (*cursor != '@') {
-        return false;
-    }
-    cursor++;
-    if (*cursor == '\0') {
-        return false;
-    }
-    while (*cursor && !is_whitespace_char(*cursor)) {
-        cursor++;
-    }
-
-    return true;
-}
-
-static const char *command_payload(const char *message, const char *name)
-{
-    const char *cursor;
-    size_t name_len;
-
-    if (!is_command(message, name)) {
-        return NULL;
-    }
-
-    while (*message && is_whitespace_char(*message)) {
-        message++;
-    }
-
-    cursor = message + 1; // Skip leading slash
-    name_len = strlen(name);
-    cursor += name_len;
-
-    if (*cursor == '@') {
-        cursor++;
-        while (*cursor && !is_whitespace_char(*cursor)) {
-            cursor++;
-        }
-    }
-
-    while (*cursor && is_whitespace_char(*cursor)) {
-        cursor++;
-    }
-
-    return cursor;
-}
-
-static bool is_diag_scope_token(const char *token)
-{
-    if (!token) {
-        return false;
-    }
-
-    return strcmp(token, "quick") == 0 ||
-           strcmp(token, "runtime") == 0 ||
-           strcmp(token, "memory") == 0 ||
-           strcmp(token, "rates") == 0 ||
-           strcmp(token, "time") == 0 ||
-           strcmp(token, "all") == 0;
-}
-
-static bool parse_diag_command_args(const char *message, cJSON *tool_input, char *error, size_t error_len)
-{
-    const char *payload = command_payload(message, "diag");
-    char payload_buf[128];
-    char *cursor;
-    bool verbose = false;
-    const char *scope = NULL;
-
-    if (!payload || payload[0] == '\0') {
-        return true;
-    }
-
-    if (strlen(payload) >= sizeof(payload_buf)) {
-        snprintf(error, error_len, "Error: /diag arguments too long");
-        return false;
-    }
-
-    snprintf(payload_buf, sizeof(payload_buf), "%s", payload);
-    cursor = strtok(payload_buf, " \t\r\n");
-    while (cursor) {
-        for (size_t i = 0; cursor[i] != '\0'; i++) {
-            cursor[i] = (char)tolower((unsigned char)cursor[i]);
-        }
-
-        if (strcmp(cursor, "verbose") == 0 || strcmp(cursor, "--verbose") == 0) {
-            verbose = true;
-        } else if (!scope && is_diag_scope_token(cursor)) {
-            scope = cursor;
-        } else {
-            snprintf(error, error_len,
-                     "Error: unknown /diag argument '%s' (use scope + optional verbose)",
-                     cursor);
-            return false;
-        }
-
-        cursor = strtok(NULL, " \t\r\n");
-    }
-
-    if (scope) {
-        cJSON_AddStringToObject(tool_input, "scope", scope);
-    }
-    if (verbose) {
-        cJSON_AddBoolToObject(tool_input, "verbose", true);
-    }
-
-    return true;
+    ESP_LOGI(TAG, "Loaded persona: %s", agent_persona_name(s_persona));
 }
 
 static void handle_diag_command(const char *user_message, int64_t chat_id, request_metrics_t *metrics)
@@ -480,7 +231,7 @@ static void handle_diag_command(const char *user_message, int64_t chat_id, reque
         return;
     }
 
-    if (!parse_diag_command_args(user_message, tool_input, error, sizeof(error))) {
+    if (!agent_parse_diag_command_args(user_message, tool_input, error, sizeof(error))) {
         send_response(error, chat_id);
         cJSON_Delete(tool_input);
         metrics_log_request(metrics, "diag_invalid_args");
@@ -507,30 +258,87 @@ static void handle_diag_command(const char *user_message, int64_t chat_id, reque
     metrics_log_request(metrics, "diag_handled");
 }
 
-static bool is_slash_command(const char *message)
+static void handle_gpio_command(const char *user_message, int64_t chat_id, request_metrics_t *metrics)
 {
-    if (!message) {
-        return false;
+    char error[120] = {0};
+    cJSON *tool_input = cJSON_CreateObject();
+    const char *tool_name = NULL;
+    bool ok;
+    int64_t started_us;
+
+    if (!tool_input) {
+        send_response("Error: GPIO read unavailable (allocation failed)", chat_id);
+        metrics_log_request(metrics, "gpio_no_mem");
+        return;
     }
 
-    while (*message && is_whitespace_char(*message)) {
-        message++;
+    if (!agent_parse_gpio_command_args(user_message, &tool_name, tool_input, error, sizeof(error))) {
+        send_response(error, chat_id);
+        cJSON_Delete(tool_input);
+        metrics_log_request(metrics, "gpio_invalid_args");
+        return;
     }
 
-    return *message == '/';
+    s_tool_result_buf[0] = '\0';
+    started_us = esp_timer_get_time();
+    ok = tools_execute(tool_name, tool_input, s_tool_result_buf, sizeof(s_tool_result_buf));
+    metrics->tool_us_total += elapsed_us_since(started_us);
+    metrics->tool_calls++;
+    cJSON_Delete(tool_input);
+
+    if (!ok) {
+        if (s_tool_result_buf[0] == '\0') {
+            snprintf(s_tool_result_buf, sizeof(s_tool_result_buf), "Error: GPIO read failed");
+        }
+        send_response(s_tool_result_buf, chat_id);
+        metrics_log_request(metrics, "gpio_failed");
+        return;
+    }
+
+    send_response(s_tool_result_buf, chat_id);
+    metrics_log_request(metrics, "gpio_handled");
 }
 
-static bool is_cron_trigger_message(const char *message)
+static bool is_local_admin_command(const char *user_message)
 {
-    if (!message) {
-        return false;
+    return agent_is_command(user_message, "gpio") ||
+           agent_is_command(user_message, "diag") ||
+           local_admin_is_command(user_message);
+}
+
+static void handle_local_admin_command(const char *user_message,
+                                       message_source_t source,
+                                       int64_t chat_id,
+                                       request_metrics_t *metrics)
+{
+    char response[CHANNEL_TX_BUF_SIZE];
+    local_admin_action_t action = LOCAL_ADMIN_ACTION_NONE;
+
+    if (source != MSG_SOURCE_CHANNEL) {
+        send_response("Error: local admin commands are only available on the USB serial console.", chat_id);
+        metrics_log_request(metrics, "local_admin_remote_denied");
+        return;
     }
 
-    while (*message && is_whitespace_char(*message)) {
-        message++;
+    if (agent_is_command(user_message, "diag")) {
+        handle_diag_command(user_message, chat_id, metrics);
+        return;
     }
 
-    return strncmp(message, "[CRON ", 6) == 0;
+    if (agent_is_command(user_message, "gpio")) {
+        handle_gpio_command(user_message, chat_id, metrics);
+        return;
+    }
+
+    if (!local_admin_handle_command(user_message, response, sizeof(response), &action)) {
+        send_response(response, chat_id);
+        metrics_log_request(metrics, "local_admin_invalid");
+        return;
+    }
+
+    send_response(response, chat_id);
+    metrics_log_request(metrics, "local_admin_handled");
+    local_admin_perform_action(action);
 }
 
 static void handle_start_command(int64_t chat_id)
@@ -547,12 +355,19 @@ static void handle_start_command(int64_t chat_id)
         "- turn the arcade on in 10 minutes\n"
         "- switch to witty persona\n"
         "\n"
-        "Telegram control commands:\n"
+        "Chat commands:\n"
         "- /help (show this message)\n"
         "- /settings (show status)\n"
-        "- /diag [scope] [verbose] (local diagnostics)\n"
         "- /stop (pause intake)\n"
-        "- /resume (resume)";
+        "- /resume (resume)\n"
+        "\n"
+        "USB local admin commands:\n"
+        "- /gpio [all|pin|pin high|pin low]\n"
+        "- /diag [scope] [verbose]\n"
+        "- /reboot\n"
+        "- /wifi [status|scan]\n"
+        "- /bootcount\n"
+        "- /factory-reset confirm";
     send_response(START_HELP_TEXT, chat_id);
 }
 
@@ -563,11 +378,13 @@ static void handle_settings_command(int64_t chat_id)
              "zclaw settings:\n"
              "- Message intake: %s\n"
              "- Persona: %s\n"
-             "- Telegram commands: /start, /help, /settings, /diag, /stop, /resume\n"
+             "- Chat commands: /start, /help, /settings, /stop, /resume\n"
+             "- USB local admin: /gpio, /diag, /reboot, /wifi, /bootcount, /factory-reset\n"
+             "- /gpio supports reads and writes (e.g. /gpio 9 low)\n"
              "- Persona changes: ask in normal chat (handled via tool calls)\n"
              "- Device settings are global (e.g., timezone <name>)",
              s_messages_paused ? "paused" : "active",
-             persona_name(s_persona));
+             agent_persona_name(s_persona));
     send_response(settings_text, chat_id);
 }
 
@@ -580,12 +397,12 @@ static int64_t response_chat_id_for_source(message_source_t source, int64_t chat
 }
 
 // Process a single user message
-static void process_message(const char *user_message, int64_t reply_chat_id)
+static void process_message(const char *user_message, message_source_t source, int64_t reply_chat_id)
 {
     ESP_LOGI(TAG, "Processing: %s", user_message);
     int history_turn_start = s_history_len;
-    bool is_non_command_message = !is_slash_command(user_message);
-    bool is_cron_trigger = is_cron_trigger_message(user_message);
+    bool is_non_command_message = !agent_is_slash_command(user_message);
+    bool is_cron_trigger = agent_is_cron_trigger_message(user_message);
     bool telegram_polling_paused = false;
     request_metrics_t metrics = {
         .started_us = esp_timer_get_time(),
@@ -596,7 +413,7 @@ static void process_message(const char *user_message, int64_t reply_chat_id)
         .rounds = 0,
     };
 
-    if (is_command(user_message, "resume")) {
+    if (agent_is_command(user_message, "resume")) {
         if (!s_messages_paused) {
             send_response("zclaw is already active.", reply_chat_id);
             metrics_log_request(&metrics, "resume_noop");
@@ -608,14 +425,14 @@ static void process_message(const char *user_message, int64_t reply_chat_id)
         return;
     }
 
-    if (is_command(user_message, "settings")) {
+    if (agent_is_command(user_message, "settings")) {
         handle_settings_command(reply_chat_id);
         metrics_log_request(&metrics, "settings_handled");
         return;
     }
 
-    if (is_command(user_message, "diag")) {
-        handle_diag_command(user_message, reply_chat_id, &metrics);
+    if (is_local_admin_command(user_message)) {
+        handle_local_admin_command(user_message, source, reply_chat_id, &metrics);
         return;
     }
 
@@ -625,20 +442,20 @@ static void process_message(const char *user_message, int64_t reply_chat_id)
         return;
     }
 
-    if (is_command(user_message, "help")) {
+    if (agent_is_command(user_message, "help")) {
         handle_start_command(reply_chat_id);
         metrics_log_request(&metrics, "help_handled");
         return;
     }
 
-    if (is_command(user_message, "stop")) {
+    if (agent_is_command(user_message, "stop")) {
         s_messages_paused = true;
         send_response("zclaw paused. I will ignore new messages until /resume.", reply_chat_id);
         metrics_log_request(&metrics, "paused");
         return;
     }
 
-    if (is_command(user_message, "start")) {
+    if (agent_is_command(user_message, "start")) {
         int64_t now_us = esp_timer_get_time();
         uint32_t since_last_start_ms = 0;
         if (s_last_start_response_us > 0 && now_us > s_last_start_response_us) {
@@ -696,7 +513,7 @@ static void process_message(const char *user_message, int64_t reply_chat_id)
 
         // Build request JSON (user message already in history)
         char *request = json_build_request(
-            build_system_prompt(),
+            agent_build_system_prompt(s_persona, s_system_prompt_buf, sizeof(s_system_prompt_buf)),
             s_history,
             s_history_len,
             NULL,  // User message already in history
@@ -860,7 +677,7 @@ static void process_message(const char *user_message, int64_t reply_chat_id)
                     cJSON *persona_json = cJSON_GetObjectItem(tool_input, "persona");
                     agent_persona_t parsed_persona = AGENT_PERSONA_NEUTRAL;
                     if (persona_json && cJSON_IsString(persona_json) &&
-                        parse_persona_name(persona_json->valuestring, &parsed_persona)) {
+                        agent_parse_persona_name(persona_json->valuestring, &parsed_persona)) {
                         s_persona = parsed_persona;
                     }
                 } else if (tool_ok && strcmp(tool_name, "reset_persona") == 0) {
@@ -926,6 +743,7 @@ void agent_test_reset(void)
     memset(s_last_non_command_text, 0, sizeof(s_last_non_command_text));
     s_messages_paused = false;
     memset(s_test_persona_value, 0, sizeof(s_test_persona_value));
+    local_admin_test_reset();
     load_persona_from_store();
 }
 
@@ -938,12 +756,12 @@ void agent_test_set_queues(QueueHandle_t channel_output_queue,
 
 void agent_test_process_message(const char *user_message)
 {
-    process_message(user_message, 0);
+    process_message(user_message, MSG_SOURCE_CHANNEL, 0);
 }
 
 void agent_test_process_message_for_chat(const char *user_message, int64_t reply_chat_id)
 {
-    process_message(user_message, reply_chat_id);
+    process_message(user_message, MSG_SOURCE_TELEGRAM, reply_chat_id);
 }
 #endif
 
@@ -957,7 +775,7 @@ static void agent_task(void *arg)
 
     while (1) {
         if (xQueueReceive(s_input_queue, &msg, portMAX_DELAY) == pdTRUE) {
-            process_message(msg.text, response_chat_id_for_source(msg.source, msg.chat_id));
+            process_message(msg.text, msg.source, response_chat_id_for_source(msg.source, msg.chat_id));
         }
     }
 }
