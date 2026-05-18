@@ -41,8 +41,8 @@ static char s_api_url_override[192] = {0};
 static bool llm_backend_requires_api_key(llm_backend_t backend)
 {
     return backend != LLM_BACKEND_OLLAMA;
-}
 
+}
 static const char *llm_backend_name(llm_backend_t backend)
 {
     switch (backend) {
@@ -588,6 +588,7 @@ const char *llm_get_api_key(void)
     if (s_fallback_llm && s_fallback_api_key[0] != '\0')
         return s_fallback_api_key;
     return s_api_key;
+}
 
 bool llm_toggle_fallback(void)
 {
@@ -596,7 +597,6 @@ bool llm_toggle_fallback(void)
     return s_fallback_llm;
 }
 
-}
 
 
 #if CONFIG_ZCLAW_STUB_LLM
@@ -615,6 +615,7 @@ bool llm_is_openai_format(void)
 
 #ifdef CONFIG_ZCLAW_STUB_LLM
 // Stub response for QEMU testing
+}
 static const char *get_stub_response(const char *request_json)
 {
     // Check if this is a tool_result (second turn after tool use)
