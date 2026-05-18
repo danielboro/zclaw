@@ -47,6 +47,32 @@ bool tools_create_tool_handler(const cJSON *input, char *result, size_t result_l
 bool tools_list_user_tools_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_delete_user_tool_handler(const cJSON *input, char *result, size_t result_len);
 
+// Battery (T-Display)
+bool tools_battery_status_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_battery_raw_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_battery_voltage_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_battery_percent_handler(const cJSON *input, char *result, size_t result_len);
+
+// Display (T-Display)
+bool tools_display_text_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_display_battery_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_red_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_set_background_color_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_clear_screen_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_screen_on_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_screen_off_handler(const cJSON *input, char *result, size_t result_len);
+
+// Sleep
+bool tools_sleep_timer_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_sleep_gpio_handler(const cJSON *input, char *result, size_t result_len);
+
+// Loop
+bool tools_loop_handler(const cJSON *input, char *result, size_t result_len);
+
+// LLM
+bool tools_switch_llm_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_get_llm_handler(const cJSON *input, char *result, size_t result_len);
 #ifdef TEST_BUILD
 bool tools_dht_test_decode_bytes(const char *model_name,
                                  int pin,
