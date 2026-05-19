@@ -1,5 +1,6 @@
 
 #include "tools_handlers.h"
+#include "display_tdisplay.h"
 #include "llm.h"
 #include "esp_sleep.h"
 #include "driver/gpio.h"
@@ -93,5 +94,90 @@ bool tools_switch_llm_handler(const cJSON *input, char *result, size_t result_le
         previous ? "true" : "false",
         s_fallback_llm ? "true" : "false",
         s_fallback_llm ? "fallback" : "primary");
+    return true;
+}
+
+// Power save tool: turn off display, optionally configure GPIO wakeup, set timer wakeup, and enter deep sleep
+bool tools_power_save_handler(const cJSON *input, char *result, size_t result_len) {
+    // Turn off display backlight and clear screen to save power
+    display_backlight(false);
+    display_clear();
+    
+    // Parse seconds
+    int seconds = 0;
+    cJSON *seconds_json = cJSON_GetObjectItemCaseSensitive(input, "seconds");
+    if (!cJSON_IsNumber(seconds_json)) {
+        snprintf(result, result_len, "Error: 'seconds' number required");
+        return false;
+    }
+    seconds = seconds_json->valueint;
+    if (seconds <= 0) {
+        snprintf(result, result_len, "Error: seconds must be > 0");
+        return false;
+    }
+    
+    // Parse enable_gpio_wakeup
+    bool enable_gpio_wakeup = false;
+    cJSON *gpio_wakeup_json = cJSON_GetObjectItemCaseSensitive(input, "enable_gpio_wakeup");
+    if (cJSON_IsBool(gpio_wakeup_json)) {
+        enable_gpio_wakeup = cJSON_IsTrue(gpio_wakeup_json);
+    } else {
+        // If not present, default to false
+        enable_gpio_wakeup = false;
+    }
+    
+    int gpio_num = -1;
+    const char *gpio_level_str = NULL;
+    if (enable_gpio_wakeup) {
+        cJSON *gpio_json = cJSON_GetObjectItemCaseSensitive(input, "gpio_num");
+        if (!cJSON_IsNumber(gpio_json)) {
+            snprintf(result, result_len, "Error: 'gpio_num' number required when enable_gpio_wakeup is true");
+            return false;
+        }
+        gpio_num = gpio_json->valueint;
+        if (gpio_num < 0 || gpio_num >= GPIO_NUM_MAX) {
+            snprintf(result, result_len, "Error: invalid GPIO number");
+            return false;
+        }
+        cJSON *level_json = cJSON_GetObjectItemCaseSensitive(input, "gpio_level");
+        if (!cJSON_IsString(level_json)) {
+            snprintf(result, result_len, "Error: 'gpio_level' string required (high/low) when enable_gpio_wakeup is true");
+            return false;
+        }
+        gpio_level_str = level_json->valuestring;
+        if (gpio_level_str == NULL) {
+            snprintf(result, result_len, "Error: 'gpio_level' string required");
+            return false;
+        }
+    }
+    
+    // Configure GPIO for wakeup if enabled
+    if (enable_gpio_wakeup) {
+        gpio_config_t cfg = {
+            .pin_bit_mask = (1ULL << gpio_num),
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = (strcasecmp(gpio_level_str, "high") == 0) ? GPIO_INTR_POSEDGE : GPIO_INTR_NEGEDGE,
+        };
+        esp_err_t err = gpio_config(&cfg);
+        if (err != ESP_OK) {
+            snprintf(result, result_len, "Error: gpio_config failed: %s", esp_err_to_name(err));
+            return false;
+        }
+    }
+    
+    // Enable timer wakeup (in microseconds)
+    esp_sleep_enable_timer_wakeup((uint64_t)seconds * 1000000ULL);
+    
+    // Enable GPIO wakeup if requested
+    if (enable_gpio_wakeup) {
+        esp_sleep_enable_gpio_wakeup();
+    }
+    
+    ESP_LOGI(TAG, "Entering deep sleep for %d seconds%s", seconds, enable_gpio_wakeup ? " with GPIO wakeup" : "");
+    esp_deep_sleep_start();
+    // Not reached
+    snprintf(result, result_len, "Entering deep sleep for %d seconds", seconds);
     return true;
 }

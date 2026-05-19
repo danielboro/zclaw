@@ -14,6 +14,10 @@
 #include "nvs_keys.h"
 #include "messages.h"
 #include "gpio_policy.h"
+#if CONFIG_ZCLAW_T_DISPLAY
+#include "display_tdisplay.h"
+#include "power_tdisplay.h"
+#endif
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

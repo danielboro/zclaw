@@ -66,6 +66,7 @@ bool tools_screen_off_handler(const cJSON *input, char *result, size_t result_le
 // Sleep
 bool tools_sleep_timer_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_sleep_gpio_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_power_save_handler(const cJSON *input, char *result, size_t result_len);
 
 // Loop
 bool tools_loop_handler(const cJSON *input, char *result, size_t result_len);

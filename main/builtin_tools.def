@@ -195,6 +195,11 @@ TOOL_ENTRY("sleep_gpio",
            "{\"type\":\"object\",\"properties\":{\"pin\":{\"type\":\"integer\",\"description\":\"GPIO pin number\"},\"state\":{\"type\":\"string\",\"enum\":[\"high\",\"low\"],\"description\":\"Wait for pin to go high or low\"}},\"required\":[\"pin\",\"state\"]}",
            tools_sleep_gpio_handler)
 
+TOOL_ENTRY("power_save",
+           "Enter deep sleep to save power. Turns off screen, sets timer wakeup, optionally enables GPIO wakeup.",
+           "{\"type\":\"object\",\"properties\":{\"seconds\":{\"type\":\"integer\",\"description\":\"Sleep duration in seconds\"},\"enable_gpio_wakeup\":{\"type\":\"boolean\",\"description\":\"Enable GPIO wakeup\"},\"gpio_num\":{\"type\":\"integer\",\"description\":\"GPIO pin for wakeup (required if enable_gpio_wakeup is true)\"},\"gpio_level\":{\"type\":\"string\",\"enum\":[\"high\",\"low\"],\"description\":\"GPIO edge for wakeup (required if enable_gpio_wakeup is true)\"}},\"required\":[\"seconds\"]}",
+           tools_power_save_handler)
+
 TOOL_ENTRY("loop",
            "Repeat a tool execution multiple times.",
            "{\"type\":\"object\",\"properties\":{\"count\":{\"type\":\"integer\",\"description\":\"Number of times to repeat\"},\"start\":{\"type\":\"integer\",\"description\":\"Starting count value\"},\"tool\":{\"type\":\"string\",\"description\":\"Name of the tool to repeat\"},\"args\":{\"type\":\"object\",\"description\":\"Arguments to pass to the tool\"}},\"required\":[\"count\",\"tool\",\"args\"]}",
