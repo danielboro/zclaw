@@ -204,6 +204,11 @@ TOOL_ENTRY("display_multi_text",
            "{\"type\":\"object\",\"properties\":{\"lines\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"Array of text lines (1-20)\"},\"x\":{\"type\":\"integer\",\"description\":\"X position\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"spacing\":{\"type\":\"integer\",\"description\":\"Line spacing in pixels (default 12)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"}},\"required\":[\"lines\",\"x\",\"y\"]}",
            tools_display_multi_text_handler)
 
+TOOL_ENTRY("display_line",
+           "Draw a line on the T-Display screen using Bresenham's algorithm.",
+           "{\"type\":\"object\",\"properties\":{\"x0\":{\"type\":\"integer\",\"description\":\"Start X\"},\"y0\":{\"type\":\"integer\",\"description\":\"Start Y\"},\"x1\":{\"type\":\"integer\",\"description\":\"End X\"},\"y1\":{\"type\":\"integer\",\"description\":\"End Y\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"}},\"required\":[\"x0\",\"y0\",\"x1\",\"y1\"]}",
+           tools_display_line_handler)
+
 // Sleep and Loop tools
 TOOL_ENTRY("sleep_timer",
            "Wait for specified seconds then wake up.",

@@ -714,3 +714,55 @@ bool tools_display_multi_text_handler(const cJSON *input, char *result, size_t r
     snprintf(result, result_len, "Displayed %d lines at (%d,%d) spacing=%d", num_lines, x, y, spacing);
     return true;
 }
+
+void display_line(int x0, int y0, int x1, int y1, uint16_t color) {
+    uint8_t r5 = (color >> 11) & 0x1F;
+    uint8_t g6 = (color >> 5) & 0x3F;
+    uint8_t b5 = color & 0x1F;
+    uint8_t r = (r5 * 255 + 15) / 31;
+    uint8_t g = (g6 * 255 + 31) / 63;
+    uint8_t b = (b5 * 255 + 15) / 31;
+
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) != pdTRUE) return;
+
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+
+    while (1) {
+        fillBox(x0, y0, 1, 1, r, g, b);
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx) { err += dx; y0 += sy; }
+    }
+
+    xSemaphoreGive(spi_mutex);
+}
+
+bool tools_display_line_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *x0_json = cJSON_GetObjectItemCaseSensitive(input, "x0");
+    cJSON *y0_json = cJSON_GetObjectItemCaseSensitive(input, "y0");
+    cJSON *x1_json = cJSON_GetObjectItemCaseSensitive(input, "x1");
+    cJSON *y1_json = cJSON_GetObjectItemCaseSensitive(input, "y1");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+
+    if (!cJSON_IsNumber(x0_json) || !cJSON_IsNumber(y0_json) ||
+        !cJSON_IsNumber(x1_json) || !cJSON_IsNumber(y1_json)) {
+        snprintf(result, result_len, "Error: x0, y0, x1, y1 are required numbers");
+        return false;
+    }
+
+    int x0 = x0_json->valueint;
+    int y0 = y0_json->valueint;
+    int x1 = x1_json->valueint;
+    int y1 = y1_json->valueint;
+    uint16_t color = 0xFFFF;
+    if (cJSON_IsNumber(color_json)) color = (uint16_t)color_json->valueint;
+
+    display_line(x0, y0, x1, y1, color);
+    snprintf(result, result_len, "Line drawn from (%d,%d) to (%d,%d)", x0, y0, x1, y1);
+    return true;
+}
