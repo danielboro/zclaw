@@ -23,6 +23,7 @@ esp_err_t display_set_message(const char *msg);
 void display_set_button_enabled(bool enable);
 void display_start_task(void);
 void display_show_test(void);
+void display_progress_bar(int x, int y, int w, int h, int percent, uint16_t color);
 
 #ifdef __cplusplus
 }

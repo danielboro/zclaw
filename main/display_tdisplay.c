@@ -475,3 +475,61 @@ bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_l
     snprintf(result, result_len, "Screen test completed");
     return true;
 }
+
+// Draw a progress bar at (x,y) with width w and height h, filled to percent (0-100)
+void display_progress_bar(int x, int y, int w, int h, int percent, uint16_t color) {
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+    // Convert RGB565 to 8-bit RGB for fillBox
+    uint8_t r5 = (color >> 11) & 0x1F;
+    uint8_t g6 = (color >> 5) & 0x3F;
+    uint8_t b5 = color & 0x1F;
+    uint8_t r = (r5 * 255 + 15) / 31;
+    uint8_t g = (g6 * 255 + 31) / 63;
+    uint8_t b = (b5 * 255 + 15) / 31;
+    // Draw background (dark gray)
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        fillBox(x, y, w, h, 32, 32, 32); // dark gray background
+        // Draw filled portion
+        int fill_w = (w * percent) / 100;
+        if (fill_w > 0) {
+            fillBox(x, y, fill_w, h, r, g, b);
+        }
+        xSemaphoreGive(spi_mutex);
+    }
+}
+
+bool tools_display_progress_bar_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *x_json = cJSON_GetObjectItemCaseSensitive(input, "x");
+    cJSON *y_json = cJSON_GetObjectItemCaseSensitive(input, "y");
+    cJSON *w_json = cJSON_GetObjectItemCaseSensitive(input, "w");
+    cJSON *h_json = cJSON_GetObjectItemCaseSensitive(input, "h");
+    cJSON *percent_json = cJSON_GetObjectItemCaseSensitive(input, "percent");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+
+    if (!cJSON_IsNumber(x_json) || !cJSON_IsNumber(y_json) || !cJSON_IsNumber(w_json) ||
+        !cJSON_IsNumber(h_json) || !cJSON_IsNumber(percent_json)) {
+        snprintf(result, result_len, "Error: x, y, w, h, percent are required numbers");
+        return false;
+    }
+
+    int x = x_json->valueint;
+    int y = y_json->valueint;
+    int w = w_json->valueint;
+    int h = h_json->valueint;
+    int percent = percent_json->valueint;
+    uint16_t color = 0x07E0; // default green
+
+    if (cJSON_IsNumber(color_json)) {
+        color = (uint16_t)color_json->valueint;
+    }
+
+    if (w <= 0 || h <= 0) {
+        snprintf(result, result_len, "Error: w and h must be > 0");
+        return false;
+    }
+
+    display_progress_bar(x, y, w, h, percent, color);
+    snprintf(result, result_len, "Progress bar drawn at (%d,%d) %dx%d, %d%%", x, y, w, h, percent);
+    return true;
+}

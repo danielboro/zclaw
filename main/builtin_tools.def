@@ -184,6 +184,11 @@ TOOL_ENTRY("screen_off",
            "{\"type\":\"object\",\"properties\":{}}",
            tools_screen_off_handler)
 
+TOOL_ENTRY("display_progress_bar",
+           "Draw a progress bar on the T-Display screen.",
+           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"w\":{\"type\":\"integer\",\"description\":\"Width in pixels\"},\"h\":{\"type\":\"integer\",\"description\":\"Height in pixels\"},\"percent\":{\"type\":\"integer\",\"min\":0,\"max\":100,\"description\":\"Fill percentage 0-100\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 fill color (default green 0x07E0)\"}},\"required\":[\"x\",\"y\",\"w\",\"h\",\"percent\"]}",
+           tools_display_progress_bar_handler)
+
 // Sleep and Loop tools
 TOOL_ENTRY("sleep_timer",
            "Wait for specified seconds then wake up.",
