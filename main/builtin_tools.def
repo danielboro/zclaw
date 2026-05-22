@@ -214,6 +214,21 @@ TOOL_ENTRY("display_icon",
            "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"icon\":{\"type\":\"string\",\"enum\":[\"wifi\",\"battery\",\"check\",\"cross\",\"arrow_up\",\"arrow_down\"],\"description\":\"Icon name\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"}},\"required\":[\"x\",\"y\",\"icon\"]}",
            tools_display_icon_handler)
 
+TOOL_ENTRY("display_scroll_text",
+           "Scroll text horizontally across the T-Display screen.",
+           "{\"type\":\"object\",\"properties\":{\"text\":{\"type\":\"string\",\"description\":\"Text to scroll\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"speed\":{\"type\":\"integer\",\"description\":\"Scroll speed 1-20 (default 2)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white)\"}},\"required\":[\"text\",\"y\"]}",
+           tools_display_scroll_text_handler)
+
+TOOL_ENTRY("display_circle",
+           "Draw a filled or outlined circle on the T-Display screen.",
+           "{\"type\":\"object\",\"properties\":{\"cx\":{\"type\":\"integer\",\"description\":\"Center X\"},\"cy\":{\"type\":\"integer\",\"description\":\"Center Y\"},\"r\":{\"type\":\"integer\",\"description\":\"Radius\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white)\"},\"fill\":{\"type\":\"boolean\",\"description\":\"Fill (true) or outline (false)\"}},\"required\":[\"cx\",\"cy\",\"r\"]}",
+           tools_display_circle_handler)
+
+TOOL_ENTRY("display_screenshot",
+           "Get information about the display framebuffer (for debugging).",
+           "{\"type\":\"object\",\"properties\":{}}",
+           tools_display_screenshot_handler)
+
 // Sleep and Loop tools
 TOOL_ENTRY("sleep_timer",
            "Wait for specified seconds then wake up.",

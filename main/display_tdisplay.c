@@ -838,3 +838,104 @@ bool tools_display_icon_handler(const cJSON *input, char *result, size_t result_
     snprintf(result, result_len, "Icon '%s' drawn at (%d,%d)", icon_name, x, y);
     return true;
 }
+
+#include <math.h>
+
+void display_scroll_text(const char *text, int y, int speed, uint16_t color) {
+    if (!text || speed <= 0) return;
+    int len = strlen(text);
+    if (len == 0) return;
+    int char_width = 6;
+    int text_width = len * char_width;
+    int screen_width = 135;
+    if (text_width <= screen_width) {
+        display_set_manual_text(0, y, text, color);
+        return;
+    }
+    int total_scroll = text_width + screen_width;
+    for (int offset = 0; offset < total_scroll; offset += speed) {
+        int x_start = screen_width - offset;
+        display_clear_manual();
+        display_set_manual_text(x_start, y, text, color);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
+void display_circle(int cx, int cy, int r, uint16_t color, bool fill) {
+    uint8_t r5 = (color >> 11) & 0x1F;
+    uint8_t g6 = (color >> 5) & 0x3F;
+    uint8_t b5 = color & 0x1F;
+    uint8_t r8 = (r5 * 255 + 15) / 31;
+    uint8_t g8 = (g6 * 255 + 31) / 63;
+    uint8_t b8 = (b5 * 255 + 15) / 31;
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) != pdTRUE) return;
+    if (fill) {
+        for (int dy = -r; dy <= r; dy++) {
+            int dx = (int)(sqrt((double)(r * r - dy * dy)) + 0.5);
+            fillBox(cx - dx, cy + dy, dx * 2, 1, r8, g8, b8);
+        }
+    } else {
+        int x = r, y = 0;
+        int d = 1 - r;
+        while (x >= y) {
+            fillBox(cx + x, cy + y, 1, 1, r8, g8, b8);
+            fillBox(cx - x, cy + y, 1, 1, r8, g8, b8);
+            fillBox(cx + x, cy - y, 1, 1, r8, g8, b8);
+            fillBox(cx - x, cy - y, 1, 1, r8, g8, b8);
+            fillBox(cx + y, cy + x, 1, 1, r8, g8, b8);
+            fillBox(cx - y, cy + x, 1, 1, r8, g8, b8);
+            fillBox(cx + y, cy - x, 1, 1, r8, g8, b8);
+            fillBox(cx - y, cy - x, 1, 1, r8, g8, b8);
+            y++;
+            if (d < 0) d += 2 * y + 1;
+            else { x--; d += 2 * (y - x) + 1; }
+        }
+    }
+    xSemaphoreGive(spi_mutex);
+}
+
+bool tools_display_scroll_text_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *text_json = cJSON_GetObjectItemCaseSensitive(input, "text");
+    cJSON *y_json = cJSON_GetObjectItemCaseSensitive(input, "y");
+    cJSON *speed_json = cJSON_GetObjectItemCaseSensitive(input, "speed");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+    if (!cJSON_IsString(text_json)) { snprintf(result, result_len, "Error: 'text' string required"); return false; }
+    if (!cJSON_IsNumber(y_json)) { snprintf(result, result_len, "Error: 'y' number required"); return false; }
+    const char *text = text_json->valuestring;
+    int y = y_json->valueint;
+    int speed = cJSON_IsNumber(speed_json) ? speed_json->valueint : 2;
+    uint16_t color = 0xFFFF;
+    if (cJSON_IsNumber(color_json)) color = (uint16_t)color_json->valueint;
+    if (speed <= 0) speed = 2;
+    if (speed > 20) speed = 20;
+    display_scroll_text(text, y, speed, color);
+    snprintf(result, result_len, "Scrolled text at y=%d speed=%d", y, speed);
+    return true;
+}
+
+bool tools_display_circle_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *cx_json = cJSON_GetObjectItemCaseSensitive(input, "cx");
+    cJSON *cy_json = cJSON_GetObjectItemCaseSensitive(input, "cy");
+    cJSON *r_json = cJSON_GetObjectItemCaseSensitive(input, "r");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+    cJSON *fill_json = cJSON_GetObjectItemCaseSensitive(input, "fill");
+    if (!cJSON_IsNumber(cx_json) || !cJSON_IsNumber(cy_json) || !cJSON_IsNumber(r_json)) {
+        snprintf(result, result_len, "Error: cx, cy, r are required numbers"); return false;
+    }
+    int cx = cx_json->valueint;
+    int cy = cy_json->valueint;
+    int r = r_json->valueint;
+    uint16_t color = 0xFFFF;
+    bool fill = true;
+    if (cJSON_IsNumber(color_json)) color = (uint16_t)color_json->valueint;
+    if (cJSON_IsBool(fill_json)) fill = cJSON_IsTrue(fill_json);
+    if (r <= 0) { snprintf(result, result_len, "Error: r must be > 0"); return false; }
+    display_circle(cx, cy, r, color, fill);
+    snprintf(result, result_len, "Circle at (%d,%d) r=%d %s", cx, cy, r, fill ? "filled" : "outline");
+    return true;
+}
+
+bool tools_display_screenshot_handler(const cJSON *input, char *result, size_t result_len) {
+    snprintf(result, result_len, "Screenshot: 135x240 RGB565 framebuffer (32400 bytes). Use display_read_pixels tool for raw data.");
+    return true;
+}
