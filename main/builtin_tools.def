@@ -209,6 +209,11 @@ TOOL_ENTRY("display_line",
            "{\"type\":\"object\",\"properties\":{\"x0\":{\"type\":\"integer\",\"description\":\"Start X\"},\"y0\":{\"type\":\"integer\",\"description\":\"Start Y\"},\"x1\":{\"type\":\"integer\",\"description\":\"End X\"},\"y1\":{\"type\":\"integer\",\"description\":\"End Y\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"}},\"required\":[\"x0\",\"y0\",\"x1\",\"y1\"]}",
            tools_display_line_handler)
 
+TOOL_ENTRY("display_icon",
+           "Draw a predefined 8x8 icon on the T-Display screen.",
+           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"icon\":{\"type\":\"string\",\"enum\":[\"wifi\",\"battery\",\"check\",\"cross\",\"arrow_up\",\"arrow_down\"],\"description\":\"Icon name\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"}},\"required\":[\"x\",\"y\",\"icon\"]}",
+           tools_display_icon_handler)
+
 // Sleep and Loop tools
 TOOL_ENTRY("sleep_timer",
            "Wait for specified seconds then wake up.",

@@ -766,3 +766,75 @@ bool tools_display_line_handler(const cJSON *input, char *result, size_t result_
     snprintf(result, result_len, "Line drawn from (%d,%d) to (%d,%d)", x0, y0, x1, y1);
     return true;
 }
+
+// Simple 8x8 bitmap icons stored in flash
+static const uint8_t icon_wifi[8] = {0x00, 0x3C, 0x42, 0x18, 0x24, 0x00, 0x18, 0x18};
+static const uint8_t icon_battery[8] = {0x00, 0x7E, 0x42, 0x42, 0x42, 0x42, 0x7E, 0x00};
+static const uint8_t icon_check[8] = {0x00, 0x01, 0x03, 0x06, 0xCC, 0x78, 0x30, 0x00};
+static const uint8_t icon_cross[8] = {0x00, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42, 0x00};
+static const uint8_t icon_arrow_up[8] = {0x10, 0x38, 0x7C, 0xFE, 0x38, 0x38, 0x38, 0x00};
+static const uint8_t icon_arrow_down[8] = {0x00, 0x38, 0x38, 0x38, 0xFE, 0x7C, 0x38, 0x10};
+
+static const uint8_t *get_icon_bitmap(const char *icon_name) {
+    if (strcmp(icon_name, "wifi") == 0) return icon_wifi;
+    if (strcmp(icon_name, "battery") == 0) return icon_battery;
+    if (strcmp(icon_name, "check") == 0) return icon_check;
+    if (strcmp(icon_name, "cross") == 0) return icon_cross;
+    if (strcmp(icon_name, "arrow_up") == 0) return icon_arrow_up;
+    if (strcmp(icon_name, "arrow_down") == 0) return icon_arrow_down;
+    return NULL;
+}
+
+void display_icon(int x, int y, const char *icon_name, uint16_t color) {
+    const uint8_t *bitmap = get_icon_bitmap(icon_name);
+    if (!bitmap) return;
+
+    uint8_t r5 = (color >> 11) & 0x1F;
+    uint8_t g6 = (color >> 5) & 0x3F;
+    uint8_t b5 = color & 0x1F;
+    uint8_t r = (r5 * 255 + 15) / 31;
+    uint8_t g = (g6 * 255 + 31) / 63;
+    uint8_t b = (b5 * 255 + 15) / 31;
+
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) != pdTRUE) return;
+    for (int row = 0; row < 8; row++) {
+        uint8_t bits = bitmap[row];
+        for (int col = 0; col < 8; col++) {
+            if (bits & (0x80 >> col)) {
+                fillBox(x + col, y + row, 1, 1, r, g, b);
+            }
+        }
+    }
+    xSemaphoreGive(spi_mutex);
+}
+
+bool tools_display_icon_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *x_json = cJSON_GetObjectItemCaseSensitive(input, "x");
+    cJSON *y_json = cJSON_GetObjectItemCaseSensitive(input, "y");
+    cJSON *icon_json = cJSON_GetObjectItemCaseSensitive(input, "icon");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+
+    if (!cJSON_IsNumber(x_json) || !cJSON_IsNumber(y_json)) {
+        snprintf(result, result_len, "Error: x and y numbers required");
+        return false;
+    }
+    if (!cJSON_IsString(icon_json)) {
+        snprintf(result, result_len, "Error: icon name string required (wifi/battery/check/cross/arrow_up/arrow_down)");
+        return false;
+    }
+
+    int x = x_json->valueint;
+    int y = y_json->valueint;
+    const char *icon_name = icon_json->valuestring;
+    uint16_t color = 0xFFFF;
+    if (cJSON_IsNumber(color_json)) color = (uint16_t)color_json->valueint;
+
+    if (!get_icon_bitmap(icon_name)) {
+        snprintf(result, result_len, "Error: unknown icon '%s'. Available: wifi, battery, check, cross, arrow_up, arrow_down", icon_name);
+        return false;
+    }
+
+    display_icon(x, y, icon_name, color);
+    snprintf(result, result_len, "Icon '%s' drawn at (%d,%d)", icon_name, x, y);
+    return true;
+}

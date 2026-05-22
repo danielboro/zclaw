@@ -67,6 +67,7 @@ bool tools_screen_brightness_handler(const cJSON *input, char *result, size_t re
 bool tools_display_rect_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_display_multi_text_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_display_line_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_display_icon_handler(const cJSON *input, char *result, size_t result_len);
 
 // Sleep
 bool tools_sleep_timer_handler(const cJSON *input, char *result, size_t result_len);
