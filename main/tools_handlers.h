@@ -64,6 +64,7 @@ bool tools_screen_on_handler(const cJSON *input, char *result, size_t result_len
 bool tools_screen_off_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_display_progress_bar_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_screen_brightness_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_display_rect_handler(const cJSON *input, char *result, size_t result_len);
 
 // Sleep
 bool tools_sleep_timer_handler(const cJSON *input, char *result, size_t result_len);

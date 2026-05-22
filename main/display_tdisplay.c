@@ -591,3 +591,74 @@ bool tools_screen_brightness_handler(const cJSON *input, char *result, size_t re
     snprintf(result, result_len, "Screen brightness set to %d%%", percent);
     return true;
 }
+
+// Helper: draw a horizontal line
+static void draw_hline(int x, int y, int w, uint8_t r, uint8_t g, uint8_t b) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        fillBox(x, y, w, 1, r, g, b);
+        xSemaphoreGive(spi_mutex);
+    }
+}
+
+// Helper: draw a vertical line
+static void draw_vline(int x, int y, int h, uint8_t r, uint8_t g, uint8_t b) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        fillBox(x, y, 1, h, r, g, b);
+        xSemaphoreGive(spi_mutex);
+    }
+}
+
+void display_rect(int x, int y, int w, int h, uint16_t color, bool fill) {
+    if (w <= 0 || h <= 0) return;
+    uint8_t r5 = (color >> 11) & 0x1F;
+    uint8_t g6 = (color >> 5) & 0x3F;
+    uint8_t b5 = color & 0x1F;
+    uint8_t r = (r5 * 255 + 15) / 31;
+    uint8_t g = (g6 * 255 + 31) / 63;
+    uint8_t b = (b5 * 255 + 15) / 31;
+    if (fill) {
+        if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            fillBox(x, y, w, h, r, g, b);
+            xSemaphoreGive(spi_mutex);
+        }
+    } else {
+        draw_hline(x, y, w, r, g, b);
+        draw_hline(x, y + h - 1, w, r, g, b);
+        draw_vline(x, y, h, r, g, b);
+        draw_vline(x + w - 1, y, h, r, g, b);
+    }
+}
+
+bool tools_display_rect_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *x_json = cJSON_GetObjectItemCaseSensitive(input, "x");
+    cJSON *y_json = cJSON_GetObjectItemCaseSensitive(input, "y");
+    cJSON *w_json = cJSON_GetObjectItemCaseSensitive(input, "w");
+    cJSON *h_json = cJSON_GetObjectItemCaseSensitive(input, "h");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+    cJSON *fill_json = cJSON_GetObjectItemCaseSensitive(input, "fill");
+
+    if (!cJSON_IsNumber(x_json) || !cJSON_IsNumber(y_json) ||
+        !cJSON_IsNumber(w_json) || !cJSON_IsNumber(h_json)) {
+        snprintf(result, result_len, "Error: x, y, w, h are required numbers");
+        return false;
+    }
+
+    int x = x_json->valueint;
+    int y = y_json->valueint;
+    int w = w_json->valueint;
+    int h = h_json->valueint;
+    uint16_t color = 0xFFFF;
+    bool fill = true;
+
+    if (cJSON_IsNumber(color_json)) color = (uint16_t)color_json->valueint;
+    if (cJSON_IsBool(fill_json)) fill = cJSON_IsTrue(fill_json);
+
+    if (w <= 0 || h <= 0) {
+        snprintf(result, result_len, "Error: w and h must be > 0");
+        return false;
+    }
+
+    display_rect(x, y, w, h, color, fill);
+    snprintf(result, result_len, "Rectangle drawn at (%d,%d) %dx%d %s", x, y, w, h, fill ? "filled" : "outline");
+    return true;
+}

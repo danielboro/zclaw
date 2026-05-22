@@ -194,6 +194,11 @@ TOOL_ENTRY("screen_brightness",
            "{\"type\":\"object\",\"properties\":{\"percent\":{\"type\":\"integer\",\"min\":0,\"max\":100,\"description\":\"Brightness percentage 0-100\"}},\"required\":[\"percent\"]}",
            tools_screen_brightness_handler)
 
+TOOL_ENTRY("display_rect",
+           "Draw a filled or outlined rectangle on the T-Display screen.",
+           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"w\":{\"type\":\"integer\",\"description\":\"Width in pixels\"},\"h\":{\"type\":\"integer\",\"description\":\"Height in pixels\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"},\"fill\":{\"type\":\"boolean\",\"description\":\"Fill rectangle (true) or outline (false)\"}},\"required\":[\"x\",\"y\",\"w\",\"h\"]}",
+           tools_display_rect_handler)
+
 // Sleep and Loop tools
 TOOL_ENTRY("sleep_timer",
            "Wait for specified seconds then wake up.",

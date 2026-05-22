@@ -25,6 +25,7 @@ void display_start_task(void);
 void display_show_test(void);
 void display_progress_bar(int x, int y, int w, int h, int percent, uint16_t color);
 void display_set_brightness(int percent);
+void display_rect(int x, int y, int w, int h, uint16_t color, bool fill);
 
 #ifdef __cplusplus
 }
