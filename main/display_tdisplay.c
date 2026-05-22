@@ -4,6 +4,7 @@
 extern uint8_t bgRed, bgGreen, bgBlue;
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "power_tdisplay.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -531,5 +532,62 @@ bool tools_display_progress_bar_handler(const cJSON *input, char *result, size_t
 
     display_progress_bar(x, y, w, h, percent, color);
     snprintf(result, result_len, "Progress bar drawn at (%d,%d) %dx%d, %d%%", x, y, w, h, percent);
+    return true;
+}
+
+#define LEDC_TIMER          LEDC_TIMER_0
+#define LEDC_MODE           LEDC_LOW_SPEED_MODE
+#define LEDC_CHANNEL        LEDC_CHANNEL_0
+#define LEDC_DUTY_RES       LEDC_TIMER_8_BIT
+#define LEDC_FREQUENCY      5000
+
+static bool s_ledc_initialized = false;
+
+static void init_ledc_pwm(void) {
+    if (s_ledc_initialized) return;
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_MODE,
+        .timer_num        = LEDC_TIMER,
+        .duty_resolution  = LEDC_DUTY_RES,
+        .freq_hz          = LEDC_FREQUENCY,
+        .clk_cfg          = LEDC_AUTO_CLK
+    };
+    ledc_timer_config(&ledc_timer);
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_MODE,
+        .channel        = LEDC_CHANNEL,
+        .timer_sel      = LEDC_TIMER,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = TFT_BL_GPIO,
+        .duty           = 255,
+        .hpoint         = 0
+    };
+    ledc_channel_config(&ledc_channel);
+    s_ledc_initialized = true;
+}
+
+void display_set_brightness(int percent) {
+    init_ledc_pwm();
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+    uint32_t duty = (percent * 255) / 100;
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+    backlight_state = (percent > 0);
+}
+
+bool tools_screen_brightness_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *percent_json = cJSON_GetObjectItemCaseSensitive(input, "percent");
+    if (!cJSON_IsNumber(percent_json)) {
+        snprintf(result, result_len, "Error: 'percent' number required (0-100)");
+        return false;
+    }
+    int percent = percent_json->valueint;
+    if (percent < 0 || percent > 100) {
+        snprintf(result, result_len, "Error: percent must be 0-100");
+        return false;
+    }
+    display_set_brightness(percent);
+    snprintf(result, result_len, "Screen brightness set to %d%%", percent);
     return true;
 }

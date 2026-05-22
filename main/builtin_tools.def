@@ -189,6 +189,11 @@ TOOL_ENTRY("display_progress_bar",
            "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"w\":{\"type\":\"integer\",\"description\":\"Width in pixels\"},\"h\":{\"type\":\"integer\",\"description\":\"Height in pixels\"},\"percent\":{\"type\":\"integer\",\"min\":0,\"max\":100,\"description\":\"Fill percentage 0-100\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 fill color (default green 0x07E0)\"}},\"required\":[\"x\",\"y\",\"w\",\"h\",\"percent\"]}",
            tools_display_progress_bar_handler)
 
+TOOL_ENTRY("screen_brightness",
+           "Set T-Display backlight brightness using PWM (GPIO4). 0=off, 100=full brightness.",
+           "{\"type\":\"object\",\"properties\":{\"percent\":{\"type\":\"integer\",\"min\":0,\"max\":100,\"description\":\"Brightness percentage 0-100\"}},\"required\":[\"percent\"]}",
+           tools_screen_brightness_handler)
+
 // Sleep and Loop tools
 TOOL_ENTRY("sleep_timer",
            "Wait for specified seconds then wake up.",
