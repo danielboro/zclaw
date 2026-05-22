@@ -662,3 +662,55 @@ bool tools_display_rect_handler(const cJSON *input, char *result, size_t result_
     snprintf(result, result_len, "Rectangle drawn at (%d,%d) %dx%d %s", x, y, w, h, fill ? "filled" : "outline");
     return true;
 }
+
+void display_multi_text(const char **lines, int num_lines, int x, int y, int spacing, uint16_t color) {
+    if (!lines || num_lines <= 0) return;
+    for (int i = 0; i < num_lines; i++) {
+        if (lines[i]) {
+            display_set_manual_text(x, y + i * spacing, lines[i], color);
+        }
+    }
+}
+
+bool tools_display_multi_text_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *lines_json = cJSON_GetObjectItemCaseSensitive(input, "lines");
+    cJSON *x_json = cJSON_GetObjectItemCaseSensitive(input, "x");
+    cJSON *y_json = cJSON_GetObjectItemCaseSensitive(input, "y");
+    cJSON *spacing_json = cJSON_GetObjectItemCaseSensitive(input, "spacing");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+
+    if (!cJSON_IsArray(lines_json)) {
+        snprintf(result, result_len, "Error: 'lines' array of strings required");
+        return false;
+    }
+    if (!cJSON_IsNumber(x_json) || !cJSON_IsNumber(y_json)) {
+        snprintf(result, result_len, "Error: x and y numbers required");
+        return false;
+    }
+
+    int x = x_json->valueint;
+    int y = y_json->valueint;
+    int spacing = cJSON_IsNumber(spacing_json) ? spacing_json->valueint : 12;
+    uint16_t color = 0xFFFF;
+    if (cJSON_IsNumber(color_json)) color = (uint16_t)color_json->valueint;
+
+    int num_lines = cJSON_GetArraySize(lines_json);
+    if (num_lines <= 0 || num_lines > 20) {
+        snprintf(result, result_len, "Error: lines array must have 1-20 items");
+        return false;
+    }
+
+    const char *lines_arr[20];
+    for (int i = 0; i < num_lines; i++) {
+        cJSON *item = cJSON_GetArrayItem(lines_json, i);
+        if (!cJSON_IsString(item)) {
+            snprintf(result, result_len, "Error: all lines must be strings");
+            return false;
+        }
+        lines_arr[i] = item->valuestring;
+    }
+
+    display_multi_text(lines_arr, num_lines, x, y, spacing, color);
+    snprintf(result, result_len, "Displayed %d lines at (%d,%d) spacing=%d", num_lines, x, y, spacing);
+    return true;
+}

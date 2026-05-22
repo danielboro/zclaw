@@ -199,6 +199,11 @@ TOOL_ENTRY("display_rect",
            "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"w\":{\"type\":\"integer\",\"description\":\"Width in pixels\"},\"h\":{\"type\":\"integer\",\"description\":\"Height in pixels\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"},\"fill\":{\"type\":\"boolean\",\"description\":\"Fill rectangle (true) or outline (false)\"}},\"required\":[\"x\",\"y\",\"w\",\"h\"]}",
            tools_display_rect_handler)
 
+TOOL_ENTRY("display_multi_text",
+           "Display multiple lines of text on the T-Display screen at once.",
+           "{\"type\":\"object\",\"properties\":{\"lines\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"Array of text lines (1-20)\"},\"x\":{\"type\":\"integer\",\"description\":\"X position\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position\"},\"spacing\":{\"type\":\"integer\",\"description\":\"Line spacing in pixels (default 12)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"}},\"required\":[\"lines\",\"x\",\"y\"]}",
+           tools_display_multi_text_handler)
+
 // Sleep and Loop tools
 TOOL_ENTRY("sleep_timer",
            "Wait for specified seconds then wake up.",

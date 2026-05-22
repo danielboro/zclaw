@@ -26,6 +26,7 @@ void display_show_test(void);
 void display_progress_bar(int x, int y, int w, int h, int percent, uint16_t color);
 void display_set_brightness(int percent);
 void display_rect(int x, int y, int w, int h, uint16_t color, bool fill);
+void display_multi_text(const char **lines, int num_lines, int x, int y, int spacing, uint16_t color);
 
 #ifdef __cplusplus
 }
