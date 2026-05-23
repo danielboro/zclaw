@@ -151,8 +151,8 @@ TOOL_ENTRY("battery_percent",
 
 // Display (T-Display)
 TOOL_ENTRY("display_text",
-           "Display text on T-Display screen at (x,y) coordinates. Color is 16-bit RGB565.",
-           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\"},\"y\":{\"type\":\"integer\"},\"text\":{\"type\":\"string\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default 0xFFFF white)\"}},\"required\":[\"x\",\"y\",\"text\"]}",
+           "Display text on T-Display screen at (x,y) coordinates. Screen is 135x240 pixels (landscape). Font size 32: ~8px avg char width, 26px height. For centered text, use display_text_centered instead.",
+           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position in pixels (0-134)\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position in pixels (0-239)\"},\"text\":{\"type\":\"string\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default 0xFFFF white)\"}},\"required\":[\"x\",\"y\",\"text\"]}",
            tools_display_text_handler)
 TOOL_ENTRY("display_battery",
            "Display battery icon and percentage on T-Display screen at (x,y).",
