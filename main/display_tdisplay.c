@@ -939,3 +939,79 @@ bool tools_display_screenshot_handler(const cJSON *input, char *result, size_t r
     snprintf(result, result_len, "Screenshot: 135x240 RGB565 framebuffer (32400 bytes). Use display_read_pixels tool for raw data.");
     return true;
 }
+
+// ── Clock Display ──────────────────────────────────────────────────────────
+
+#include <time.h>
+#include <sys/time.h>
+
+static TaskHandle_t s_clock_task_handle = NULL;
+static bool s_clock_running = false;
+static int s_clock_x = 40;
+static int s_clock_y = 5;
+static uint16_t s_clock_color = 0xFFFF;
+static bool s_clock_show_date = false;
+
+static void clock_task(void *pvParameters) {
+    char buf[32];
+    while (s_clock_running) {
+        time_t now;
+        struct tm timeinfo;
+        time(&now);
+        localtime_r(&now, &timeinfo);
+        if (s_clock_show_date) {
+            strftime(buf, sizeof(buf), "%m/%d %H:%M:%S", &timeinfo);
+        } else {
+            strftime(buf, sizeof(buf), "%H:%M:%S", &timeinfo);
+        }
+        display_set_manual_text(s_clock_x, s_clock_y, buf, s_clock_color);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    vTaskDelete(NULL);
+}
+
+void clock_display_start(int x, int y, uint16_t color, bool show_date) {
+    if (s_clock_running) return;
+    s_clock_x = x;
+    s_clock_y = y;
+    s_clock_color = color;
+    s_clock_show_date = show_date;
+    s_clock_running = true;
+    xTaskCreate(clock_task, "clock", 2048, NULL, 5, &s_clock_task_handle);
+}
+
+void clock_display_stop(void) {
+    s_clock_running = false;
+    s_clock_task_handle = NULL;
+}
+
+bool tools_display_clock_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *action_json = cJSON_GetObjectItemCaseSensitive(input, "action");
+    const char *action = cJSON_IsString(action_json) ? action_json->valuestring : "start";
+
+    if (strcasecmp(action, "stop") == 0) {
+        clock_display_stop();
+        snprintf(result, result_len, "Clock display stopped");
+        return true;
+    }
+
+    // Default: start
+    if (s_clock_running) {
+        clock_display_stop();
+        vTaskDelay(pdMS_TO_TICKS(1100));
+    }
+
+    cJSON *x_json = cJSON_GetObjectItemCaseSensitive(input, "x");
+    cJSON *y_json = cJSON_GetObjectItemCaseSensitive(input, "y");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+    cJSON *show_date_json = cJSON_GetObjectItemCaseSensitive(input, "show_date");
+
+    int x = cJSON_IsNumber(x_json) ? x_json->valueint : 40;
+    int y = cJSON_IsNumber(y_json) ? y_json->valueint : 5;
+    uint16_t color = cJSON_IsNumber(color_json) ? (uint16_t)color_json->valueint : 0xFFFF;
+    bool show_date = cJSON_IsBool(show_date_json) ? cJSON_IsTrue(show_date_json) : false;
+
+    clock_display_start(x, y, color, show_date);
+    snprintf(result, result_len, "Clock display started at (%d,%d) color=0x%04X show_date=%s", x, y, color, show_date ? "true" : "false");
+    return true;
+}

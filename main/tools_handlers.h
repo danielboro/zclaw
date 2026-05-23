@@ -71,6 +71,7 @@ bool tools_display_icon_handler(const cJSON *input, char *result, size_t result_
 bool tools_display_scroll_text_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_display_circle_handler(const cJSON *input, char *result, size_t result_len);
 bool tools_display_screenshot_handler(const cJSON *input, char *result, size_t result_len);
+bool tools_display_clock_handler(const cJSON *input, char *result, size_t result_len);
 
 // Sleep
 bool tools_sleep_timer_handler(const cJSON *input, char *result, size_t result_len);
