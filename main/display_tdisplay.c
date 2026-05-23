@@ -77,7 +77,7 @@ esp_err_t display_init(void)
 void display_clear(void)
 {
     if (!s_display_initialized) return;
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         clearScreen(0, 0, 0);
         xSemaphoreGive(spi_mutex);
     } else {
@@ -97,7 +97,7 @@ void display_text(int x, int y, const char *text, uint16_t color)
     r = (r5 * 255 + 15) / 31;
     g = (g6 * 255 + 31) / 63;
     b = (b5 * 255 + 15) / 31;
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         displayStr((char*)text, x, y, r, g, b, 32);
         xSemaphoreGive(spi_mutex);
     } else {
@@ -119,7 +119,7 @@ void display_battery(int x, int y, uint8_t percent, bool charging)
     g = (g6 * 255 + 31) / 63;
     b = (b5 * 255 + 15) / 31;
 
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         // border (white)
         fillBox(x, y, bat_w, bat_h, 255, 255, 255);
         // inner background (black)
@@ -156,7 +156,7 @@ static char display_message[64] = {0};
 esp_err_t display_set_message(const char *msg)
 {
     if (!msg) return ESP_ERR_INVALID_ARG;
-    if (xSemaphoreTake(msg_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(msg_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         strncpy(display_message, msg, sizeof(display_message)-1);
         display_message[sizeof(display_message)-1] = '\0';
         xSemaphoreGive(msg_mutex);
@@ -167,7 +167,7 @@ esp_err_t display_set_message(const char *msg)
 
 void display_set_manual_text(int x, int y, const char *text, uint16_t color)
 {
-    if (xSemaphoreTake(manual_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(manual_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         manual_x = x;
         manual_y = y;
         manual_color = color;
@@ -186,7 +186,7 @@ void display_set_manual_xy(int x, int y)
 
 void display_clear_manual(void)
 {
-    if (xSemaphoreTake(manual_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(manual_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         manual_valid = false;
         xSemaphoreGive(manual_mutex);
     }
@@ -339,7 +339,7 @@ bool tools_set_background_color_handler(const cJSON *input, char *result, size_t
     bgRed = r;
     bgGreen = g;
     bgBlue = b;
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         clearScreen(r, g, b);
         xSemaphoreGive(spi_mutex);
     } else {
@@ -368,7 +368,7 @@ bool tools_clear_screen_handler(const cJSON *input, char *result, size_t result_
         g = (g6 * 255 + 31) / 63;
         b = (b5 * 255 + 15) / 31;
     }
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         clearScreen(r, g, b);
         xSemaphoreGive(spi_mutex);
     } else {
@@ -426,7 +426,7 @@ bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_l
     // Set background to dark blue (RGB565 = 0x001D? Actually 0x001D is blue? Let's compute: R=0, G=0x19, B=0x1F -> 0x001F? Use nice dark blue: R=0x00, G=0x00, B=0x1F -> RGB565 = 0x001F)
     // But our set_background_color expects RGB565. We'll set bg globals and clear manually.
     bgRed = 0; bgGreen = 0; bgBlue = 31; // dark blue
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         clearScreen(0, 0, 31);
         xSemaphoreGive(spi_mutex);
     }
@@ -447,7 +447,7 @@ bool tools_test_screen_handler(const cJSON *input, char *result, size_t result_l
         uint8_t r = (r5 * 255 + 15) / 31;
         uint8_t g = (g6 * 255 + 31) / 63;
         uint8_t b = (b5 * 255 + 15) / 31;
-        if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
             fillBox(5 + i*16, y, 14, 10, r, g, b);
             xSemaphoreGive(spi_mutex);
         }
@@ -489,7 +489,7 @@ void display_progress_bar(int x, int y, int w, int h, int percent, uint16_t colo
     uint8_t g = (g6 * 255 + 31) / 63;
     uint8_t b = (b5 * 255 + 15) / 31;
     // Draw background (dark gray)
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         fillBox(x, y, w, h, 32, 32, 32); // dark gray background
         // Draw filled portion
         int fill_w = (w * percent) / 100;
@@ -594,7 +594,7 @@ bool tools_screen_brightness_handler(const cJSON *input, char *result, size_t re
 
 // Helper: draw a horizontal line
 static void draw_hline(int x, int y, int w, uint8_t r, uint8_t g, uint8_t b) {
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         fillBox(x, y, w, 1, r, g, b);
         xSemaphoreGive(spi_mutex);
     }
@@ -602,7 +602,7 @@ static void draw_hline(int x, int y, int w, uint8_t r, uint8_t g, uint8_t b) {
 
 // Helper: draw a vertical line
 static void draw_vline(int x, int y, int h, uint8_t r, uint8_t g, uint8_t b) {
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         fillBox(x, y, 1, h, r, g, b);
         xSemaphoreGive(spi_mutex);
     }
@@ -617,7 +617,7 @@ void display_rect(int x, int y, int w, int h, uint16_t color, bool fill) {
     uint8_t g = (g6 * 255 + 31) / 63;
     uint8_t b = (b5 * 255 + 15) / 31;
     if (fill) {
-        if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
             fillBox(x, y, w, h, r, g, b);
             xSemaphoreGive(spi_mutex);
         }
@@ -723,7 +723,7 @@ void display_line(int x0, int y0, int x1, int y1, uint16_t color) {
     uint8_t g = (g6 * 255 + 31) / 63;
     uint8_t b = (b5 * 255 + 15) / 31;
 
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) != pdTRUE) return;
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) return;
 
     int dx = abs(x1 - x0);
     int dy = abs(y1 - y0);
@@ -796,7 +796,7 @@ void display_icon(int x, int y, const char *icon_name, uint16_t color) {
     uint8_t g = (g6 * 255 + 31) / 63;
     uint8_t b = (b5 * 255 + 15) / 31;
 
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) != pdTRUE) return;
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) return;
     for (int row = 0; row < 8; row++) {
         uint8_t bits = bitmap[row];
         for (int col = 0; col < 8; col++) {
@@ -868,7 +868,7 @@ void display_circle(int cx, int cy, int r, uint16_t color, bool fill) {
     uint8_t r8 = (r5 * 255 + 15) / 31;
     uint8_t g8 = (g6 * 255 + 31) / 63;
     uint8_t b8 = (b5 * 255 + 15) / 31;
-    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(100)) != pdTRUE) return;
+    if (xSemaphoreTake(spi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) return;
     if (fill) {
         for (int dy = -r; dy <= r; dy++) {
             int dx = (int)(sqrt((double)(r * r - dy * dy)) + 0.5);
