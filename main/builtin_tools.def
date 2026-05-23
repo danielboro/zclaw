@@ -234,6 +234,11 @@ TOOL_ENTRY("display_clock",
            "{\"type\":\"object\",\"properties\":{\"action\":{\"type\":\"string\",\"enum\":[\"start\",\"stop\"],\"description\":\"Start or stop the clock (default: start)\"},\"x\":{\"type\":\"integer\",\"description\":\"X position (default 40)\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position (default 5)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"},\"show_date\":{\"type\":\"boolean\",\"description\":\"Show date + time (default false)\"}}}",
            tools_display_clock_handler)
 
+TOOL_ENTRY("display_text_centered",
+           "Display text centered horizontally on the T-Display screen (135x240 pixels). Auto-calculates X position.",
+           "{\"type\":\"object\",\"properties\":{\"text\":{\"type\":\"string\",\"description\":\"Text to display\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position in pixels (default 116, center of 240px height)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"}},\"required\":[\"text\"]}",
+           tools_display_text_centered_handler)
+
 // Sleep and Loop tools
 TOOL_ENTRY("sleep_timer",
            "Wait for specified seconds then wake up.",

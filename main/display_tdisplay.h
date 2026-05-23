@@ -33,6 +33,7 @@ void display_scroll_text(const char *text, int y, int speed, uint16_t color);
 void display_circle(int cx, int cy, int r, uint16_t color, bool fill);
 void clock_display_start(int x, int y, uint16_t color, bool show_date);
 void clock_display_stop(void);
+void display_text_centered(const char *text, int y, uint16_t color);
 
 #ifdef __cplusplus
 }

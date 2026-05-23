@@ -985,6 +985,32 @@ void clock_display_stop(void) {
     s_clock_task_handle = NULL;
 }
 
+bool tools_display_text_centered_handler(const cJSON *input, char *result, size_t result_len) {
+    cJSON *text_json = cJSON_GetObjectItemCaseSensitive(input, "text");
+    cJSON *y_json = cJSON_GetObjectItemCaseSensitive(input, "y");
+    cJSON *color_json = cJSON_GetObjectItemCaseSensitive(input, "color");
+
+    if (!cJSON_IsString(text_json)) {
+        snprintf(result, result_len, "Error: 'text' string required");
+        return false;
+    }
+
+    const char *text = text_json->valuestring;
+    int y = cJSON_IsNumber(y_json) ? y_json->valueint : 116;
+    uint16_t color = cJSON_IsNumber(color_json) ? (uint16_t)color_json->valueint : 0xFFFF;
+
+    int len = strlen(text);
+    int char_width = 8;
+    int text_width = len * char_width;
+    int screen_width = 135;
+    int x = (screen_width - text_width) / 2;
+    if (x < 0) x = 0;
+
+    display_text(x, y, text, color);
+    snprintf(result, result_len, "Centered text '%s' at y=%d (x=%d)", text, y, x);
+    return true;
+}
+
 bool tools_display_clock_handler(const cJSON *input, char *result, size_t result_len) {
     cJSON *action_json = cJSON_GetObjectItemCaseSensitive(input, "action");
     const char *action = cJSON_IsString(action_json) ? action_json->valuestring : "start";
