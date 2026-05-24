@@ -13,7 +13,7 @@
 // -----------------------------------------------------------------------------
 // Conversation History
 // -----------------------------------------------------------------------------
-#define MAX_HISTORY_TURNS       12      // User/assistant pairs to keep
+#define MAX_HISTORY_TURNS       6       // User/assistant pairs to keep (reduce to prevent OOM in json_build_request)
 #define MAX_MESSAGE_LEN         1024    // Max length per message in history
 
 // -----------------------------------------------------------------------------
