@@ -236,7 +236,7 @@ TOOL_ENTRY("display_clock",
 
 TOOL_ENTRY("display_text_centered",
            "Display text centered horizontally on the T-Display screen (135x240 pixels). Auto-calculates X position.",
-           "{\"type\":\"object\",\"properties\":{\"text\":{\"type\":\"string\",\"description\":\"Text to display\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position in pixels (default 116, center of 240px height)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"}},\"required\":[\"text\"]}",
+           "{\"type\":\"object\",\"properties\":{\"text\":{\"type\":\"string\",\"description\":\"Text to display\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position in pixels (default 116)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default 0xFFFF white). Examples: 0xF800=red, 0x07E0=green, 0x001F=blue\"}},\"required\":[\"text\"]}",
            tools_display_text_centered_handler)
 
 // Sleep and Loop tools
