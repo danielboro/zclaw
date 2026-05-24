@@ -181,6 +181,13 @@ void app_main(void)
     tools_init();
     channel_init();
 
+    // Pre-parse tool schemas once at startup to reduce memory usage during request building
+    {
+        int tool_count = 0;
+        const tool_def_t *tools = tools_get_all(&tool_count);
+        json_preparse_tool_schemas(tools, tool_count);
+    }
+
     QueueHandle_t input_queue = xQueueCreate(INPUT_QUEUE_LENGTH, sizeof(channel_msg_t));
     QueueHandle_t channel_output_queue = xQueueCreate(OUTPUT_QUEUE_LENGTH, sizeof(channel_output_msg_t));
     if (!input_queue || !channel_output_queue) {

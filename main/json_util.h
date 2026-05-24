@@ -47,4 +47,6 @@ bool json_parse_response(
 // Free the parsed response (call after done with tool_input)
 void json_free_parsed_response(void);
 
+void json_preparse_tool_schemas(const struct tool_def *tools, int tool_count);
+
 #endif // JSON_UTIL_H

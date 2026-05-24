@@ -14,6 +14,26 @@ static const char *TAG = "json";
 // Keep parsed response tree alive for tool_input access
 static cJSON *s_parsed_response = NULL;
 
+// Pre-parsed tool schemas (parsed once at startup, reused per request)
+static cJSON *s_tool_schemas_cache[128] = {0};
+static int s_tool_schemas_count = 0;
+
+void json_preparse_tool_schemas(const tool_def_t *tools, int tool_count) {
+    for (int i = 0; i < tool_count && i < 128; i++) {
+        if (s_tool_schemas_cache[i]) {
+            cJSON_Delete(s_tool_schemas_cache[i]);
+            s_tool_schemas_cache[i] = NULL;
+        }
+        if (tools[i].input_schema_json) {
+            s_tool_schemas_cache[i] = cJSON_Parse(tools[i].input_schema_json);
+        }
+        if (!s_tool_schemas_cache[i]) {
+            s_tool_schemas_cache[i] = cJSON_CreateObject();
+        }    }
+    s_tool_schemas_count = tool_count < 128 ? tool_count : 128;
+    ESP_LOGI(TAG, "Pre-parsed %d tool schemas", s_tool_schemas_count);
+}
+
 static bool add_token_limit_field(cJSON *root)
 {
     const char *field = "max_tokens";
@@ -378,7 +398,10 @@ static char *build_openai_request(
         for (int i = 0; i < tool_count; i++) {
             cJSON *tool = cJSON_CreateObject();
             cJSON *func = cJSON_CreateObject();
-            cJSON *params = cJSON_Parse(tools[i].input_schema_json);
+            cJSON *params = NULL;
+            if (i < s_tool_schemas_count && s_tool_schemas_cache[i]) {
+                params = cJSON_Duplicate(s_tool_schemas_cache[i], true);
+            }
             if (!params) {
                 params = cJSON_CreateObject();
             }
