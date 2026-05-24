@@ -491,6 +491,12 @@ static bool parse_openai_response(
         strncpy(text_out, content->valuestring, text_out_len - 1);
         text_out[text_out_len - 1] = '\0';
     }
+    if (content && cJSON_IsNull(content)) {
+        ESP_LOGW(TAG, "OpenAI response has content=null (tool_calls response)");
+    }
+    if (!content) {
+        ESP_LOGW(TAG, "OpenAI response has no content field");
+    }
 
     // Check for tool_calls
     cJSON *tool_calls = cJSON_GetObjectItem(message, "tool_calls");
