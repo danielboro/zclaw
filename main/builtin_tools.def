@@ -21,8 +21,8 @@ TOOL_ENTRY("gpio_read_all",
            "{\"type\":\"object\",\"properties\":{}}",
            tools_gpio_read_all_handler)
 TOOL_ENTRY("delay",
-           "Wait in milliseconds.",
-           "{\"type\":\"object\",\"properties\":{\"milliseconds\":{\"type\":\"integer\"}},\"required\":[\"milliseconds\"]}",
+           "Wait for a specified time in milliseconds. Default: 1000ms.",
+           "{\"type\":\"object\",\"properties\":{\"milliseconds\":{\"type\":\"integer\",\"description\":\"Time to wait in ms (default: 1000)\"}},\"required\":[]}",
            tools_delay_handler)
 TOOL_ENTRY("i2c_scan",
            "Scan an I2C bus for devices.",
@@ -155,8 +155,8 @@ TOOL_ENTRY("display_text",
            "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position in pixels (0-134)\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position in pixels (0-239)\"},\"text\":{\"type\":\"string\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default 0xFFFF white)\"}},\"required\":[\"x\",\"y\",\"text\"]}",
            tools_display_text_handler)
 TOOL_ENTRY("display_battery",
-           "Display battery icon and percentage on T-Display screen at (x,y).",
-           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\"},\"y\":{\"type\":\"integer\"},\"percent\":{\"type\":\"integer\",\"min\":0,\"max\":100},\"charging\":{\"type\":\"boolean\"}},\"required\":[\"x\",\"y\",\"percent\"]}",
+           "Display battery icon on T-Display. Auto-reads battery unless percent is given. Defaults: x=10, y=10.",
+           "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"integer\",\"description\":\"X position (default 10)\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position (default 10)\"},\"percent\":{\"type\":\"integer\",\"min\":0,\"max\":100,\"description\":\"Battery percent (default: auto-read from ADC)\"},\"charging\":{\"type\":\"boolean\",\"description\":\"Show charging indicator (default: false)\"}},\"required\":[]}",
            tools_display_battery_handler)
 TOOL_ENTRY("test_screen", "Turns screen on, displays test text for 5 seconds, then turns off.", "{}", tools_test_screen_handler)
 TOOL_ENTRY("red",

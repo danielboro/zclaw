@@ -289,13 +289,9 @@ bool tools_display_battery_handler(const cJSON *input, char *result, size_t resu
     cJSON *y_json = cJSON_GetObjectItem(input, "y");
     cJSON *percent_json = cJSON_GetObjectItem(input, "percent");
     cJSON *charging_json = cJSON_GetObjectItem(input, "charging");
-    if (!cJSON_IsNumber(x_json) || !cJSON_IsNumber(y_json) || !cJSON_IsNumber(percent_json)) {
-        snprintf(result, result_len, "Missing or invalid parameters: need x, y, percent");
-        return false;
-    }
-    int x = x_json->valueint;
-    int y = y_json->valueint;
-    uint8_t percent = (uint8_t)percent_json->valueint;
+    int x = cJSON_IsNumber(x_json) ? x_json->valueint : 10;
+    int y = cJSON_IsNumber(y_json) ? y_json->valueint : 10;
+    uint8_t percent = cJSON_IsNumber(percent_json) ? (uint8_t)percent_json->valueint : power_get_battery_percent();
     bool charging = charging_json ? cJSON_IsTrue(charging_json) : false;
     display_battery(x, y, percent, charging);
     snprintf(result, result_len, "Battery icon at (%d,%d): %d%%%s", x, y, percent, charging ? " (charging)" : "");

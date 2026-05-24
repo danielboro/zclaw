@@ -180,12 +180,7 @@ bool tools_delay_handler(const cJSON *input, char *result, size_t result_len)
 {
     cJSON *ms_json = cJSON_GetObjectItem(input, "milliseconds");
 
-    if (!ms_json || !cJSON_IsNumber(ms_json)) {
-        snprintf(result, result_len, "Error: 'milliseconds' required (number)");
-        return false;
-    }
-
-    int ms = ms_json->valueint;
+    int ms = cJSON_IsNumber(ms_json) ? ms_json->valueint : 1000;
 
     if (ms <= 0) {
         snprintf(result, result_len, "Error: milliseconds must be positive");
