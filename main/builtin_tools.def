@@ -230,8 +230,8 @@ TOOL_ENTRY("display_screenshot",
            tools_display_screenshot_handler)
 
 TOOL_ENTRY("display_clock",
-           "Start or stop a live clock display on the T-Display screen. Updates every second via a background task (not LLM-dependent).",
-           "{\"type\":\"object\",\"properties\":{\"action\":{\"type\":\"string\",\"enum\":[\"start\",\"stop\"],\"description\":\"Start or stop the clock (default: start)\"},\"x\":{\"type\":\"integer\",\"description\":\"X position (default 40)\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position (default 5)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 color (default white 0xFFFF)\"},\"show_date\":{\"type\":\"boolean\",\"description\":\"Show date + time (default false)\"}}}",
+            "Start or stop a live clock display on the T-Display screen (135x240 pixels). Updates every second via a background task (not LLM-dependent). IMPORTANT: Always provide x, y, color parameters when starting. Screen center is (67,120), bottom is y=220. RGB565 color examples: 0xF800=red, 0x07E0=green, 0x001F=blue, 0xFFFF=white.",
+            "{\"type\":\"object\",\"properties\":{\"action\":{\"type\":\"string\",\"enum\":[\"start\",\"stop\"],\"description\":\"Start or stop the clock (default: start)\"},\"x\":{\"type\":\"integer\",\"description\":\"X position in pixels (default 40, screen width is 135)\"},\"y\":{\"type\":\"integer\",\"description\":\"Y position in pixels (default 5, screen height is 240)\"},\"color\":{\"type\":\"integer\",\"description\":\"RGB565 text color. Examples: 0xF800=red, 0x07E0=green, 0x001F=blue, 0xFFFF=white (default)\"},\"show_date\":{\"type\":\"boolean\",\"description\":\"Show date+time like MM/DD HH:MM:SS instead of just HH:MM:SS (default false)\"}},\"required\":[\"x\",\"y\",\"color\"]}",
            tools_display_clock_handler)
 
 TOOL_ENTRY("display_text_centered",
