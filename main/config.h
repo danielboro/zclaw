@@ -84,7 +84,10 @@ typedef enum {
     "Use persona tools only when the user explicitly asks to view, set, or reset persona. " \
     "Do not change persona from casual wording. " \
     "When asked what is saved or set on the device, verify with tools. " \
-    "When a custom tool returns an action, carry it out with built-in tools."
+    "When a custom tool returns an action, carry it out with built-in tools. " \
+    "DISPLAY: 135x240 pixels. Center=(67,120). Bottom area y>200. " \
+    "RGB565 colors: red=0xF800, green=0x07E0, blue=0x001F, white=0xFFFF, yellow=0xFFE0. " \
+    "When displaying text at bottom use y=220. For center use x=67,y=120. Always pass x,y,color to display_clock."
 
 // -----------------------------------------------------------------------------
 // GPIO tool safety range (configurable via Kconfig)
